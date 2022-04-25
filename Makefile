@@ -14,14 +14,14 @@ ROOTUTILS=./src/Utils
 
 VSINC=./src/
 
-HDF5=/usr/local
+HDF5=/opt/homebrew/Cellar/hdf5/1.12.1_1
 BOOST=/opt/boost_1_75_0
-CFITSIO=/opt/cfitsio-3.49
-VTK_LIB=/opt/vtk-9.0.3/lib/
-VTKDIR_INC=/opt/vtk-9.0.3/include/vtk-9.0/
+CFITSIO= /opt/cfitsio-4.0_arm64/
+VTK_LIB=/opt/VTK-9.1.0_arm64/lib/
+VTKDIR_INC=/opt/VTK-9.1.0_arm64/include/vtk-9.1/
 
-SRCIMPORTER= $(ROOTIMPORTER)/abstractsource.o	$(ROOTIMPORTER)/binsource.o		$(ROOTIMPORTER)/fitsimagesource.o	$(ROOTIMPORTER)/flysource.o			$(ROOTIMPORTER)/mainImporter.o	$(ROOTIMPORTER)/ramsessource.o	$(ROOTIMPORTER)/rawpointssource.o	$(ROOTIMPORTER)/vosourcenew.o $(ROOTIMPORTER)/asciisource.o $(ROOTIMPORTER)/csvsource.o $(ROOTIMPORTER)/fitstablesource.o	$(ROOTIMPORTER)/gadgetsource.o	$(ROOTIMPORTER)/hdf5source.o $(ROOTIMPORTER)/muportalsource.o	$(ROOTIMPORTER)/rawgridsource.o $(ROOTUTILS)/tinystr.o $(ROOTUTILS)/tinyxml.o $(ROOTUTILS)/tinyxmlerror.o $(ROOTUTILS)/tinyxmlparser.o $(ROOTUTILS)/historyXmlWriter.o $(ROOTUTILS)/commandline.o $(ROOTUTILS)/visivoutils.o		
-OBJIMPORTER= $(ROOTIMPORTER)/build/abstractsource.o $(ROOTIMPORTER)/build/binsource.o $(ROOTIMPORTER)/build/fitsimagesource.o $(ROOTIMPORTER)/build/flysource.o $(ROOTIMPORTER)/build/mainImporter.o $(ROOTIMPORTER)/build/ramsessource.o $(ROOTIMPORTER)/build/rawpointssource.o $(ROOTIMPORTER)/build/vosourcenew.o $(ROOTIMPORTER)/build/asciisource.o $(ROOTIMPORTER)/build/csvsource.o $(ROOTIMPORTER)/build/fitstablesource.o $(ROOTIMPORTER)/build/gadgetsource.o $(ROOTIMPORTER)/build/hdf5source.o $(ROOTIMPORTER)/build/muportalsource.o $(ROOTIMPORTER)/build/rawgridsource.o $(ROOTUTILS)/build/tinystr.o $(ROOTUTILS)/build/tinyxml.o $(ROOTUTILS)/build/tinyxmlerror.o $(ROOTUTILS)/build/tinyxmlparser.o $(ROOTUTILS)/build/historyXmlWriter.o $(ROOTUTILS)/build/commandline.o $(ROOTUTILS)/build/visivoutils.o
+SRCIMPORTER= $(ROOTIMPORTER)/abstractsource.o	$(ROOTIMPORTER)/binsource.o		$(ROOTIMPORTER)/fitsimagesource.o	$(ROOTIMPORTER)/flysource.o			$(ROOTIMPORTER)/mainImporter.o	$(ROOTIMPORTER)/ramsessource.o	$(ROOTIMPORTER)/rawpointssource.o	$(ROOTIMPORTER)/vosourcenew.o $(ROOTIMPORTER)/asciisource.o $(ROOTIMPORTER)/csvsource.o $(ROOTIMPORTER)/fitstablesource.o	$(ROOTIMPORTER)/gadgetsource.o	$(ROOTIMPORTER)/hdf5source.o $(ROOTIMPORTER)/muportalsource.o	$(ROOTIMPORTER)/rawgridsource.o $(ROOTIMPORTER)/vtksource.o $(ROOTUTILS)/tinystr.o $(ROOTUTILS)/tinyxml.o $(ROOTUTILS)/tinyxmlerror.o $(ROOTUTILS)/tinyxmlparser.o $(ROOTUTILS)/historyXmlWriter.o $(ROOTUTILS)/commandline.o $(ROOTUTILS)/visivoutils.o  
+OBJIMPORTER= $(ROOTIMPORTER)/build/abstractsource.o $(ROOTIMPORTER)/build/binsource.o $(ROOTIMPORTER)/build/fitsimagesource.o $(ROOTIMPORTER)/build/flysource.o $(ROOTIMPORTER)/build/mainImporter.o $(ROOTIMPORTER)/build/ramsessource.o $(ROOTIMPORTER)/build/rawpointssource.o $(ROOTIMPORTER)/build/vosourcenew.o $(ROOTIMPORTER)/build/asciisource.o $(ROOTIMPORTER)/build/csvsource.o $(ROOTIMPORTER)/build/fitstablesource.o $(ROOTIMPORTER)/build/gadgetsource.o $(ROOTIMPORTER)/build/hdf5source.o $(ROOTIMPORTER)/build/muportalsource.o $(ROOTIMPORTER)/build/rawgridsource.o $(ROOTIMPORTER)/build/vtksource.o $(ROOTUTILS)/build/tinystr.o $(ROOTUTILS)/build/tinyxml.o $(ROOTUTILS)/build/tinyxmlerror.o $(ROOTUTILS)/build/tinyxmlparser.o $(ROOTUTILS)/build/historyXmlWriter.o $(ROOTUTILS)/build/commandline.o $(ROOTUTILS)/build/visivoutils.o 
 
 SRCFILTER= $(ROOTUTILS)/fparser.o $(ROOTFILTER)/vsLine.o $(ROOTFILTER)/vscoarsevolumeop.o $(ROOTFILTER)/vsmathop.o $(ROOTFILTER)/vsprinttableop.o	$(ROOTFILTER)/vsstatisticop.o $(ROOTFILTER)/fpoptimizer.o $(ROOTFILTER)/vsVector.o $(ROOTFILTER)/vscutop.o $(ROOTFILTER)/vsmergeop.o $(ROOTFILTER)/vsrandomizertableop.o $(ROOTFILTER)/vsswapop.o $(ROOTFILTER)/mainFilter.o $(ROOTFILTER)/vsVoxel.o $(ROOTFILTER)/vsdecimatorop.o $(ROOTFILTER)/vsmoduleop.o $(ROOTFILTER)/vsselectcolumnsop.o	$(ROOTUTILS)/vstable.o $(ROOTUTILS)/parametersparser.o $(ROOTFILTER)/vsaddidop.o $(ROOTFILTER)/vsexampleop.o $(ROOTFILTER)/vsmrcampos.o	$(ROOTFILTER)/vsselectfieldop.o $(ROOTFILTER)/vstableop.o $(ROOTUTILS)/tinystr.o $(ROOTFILTER)/vsextractlistrowsop.o $(ROOTFILTER)/vsmuportalop.o $(ROOTFILTER)/vsselectvol.o $(ROOTUTILS)/tinyxml.o $(ROOTFILTER)/vsextractsubvolumeop.o	$(ROOTUTILS)/vsobject.o $(ROOTFILTER)/vsshowtableop.o $(ROOTFILTER)/vsvisualop.o $(ROOTUTILS)/tinyxmlerror.o $(ROOTFILTER)/vsappend.o $(ROOTFILTER)/vsgrid2pointdistr.o	 $(ROOTFILTER)/vspointdistributeop.o $(ROOTFILTER)/vssigmacontoursop.o $(ROOTFILTER)/vsvollimit.o $(ROOTUTILS)/tinyxmlparser.o $(ROOTFILTER)/vschangecolnameop.o $(ROOTFILTER)/vsincludeop.o $(ROOTFILTER)/vspointpropertyop.o $(ROOTFILTER)/vssphereop.o $(ROOTFILTER)/vswrvotableop.o 	$(ROOTUTILS)/util.o $(ROOTFILTER)/vsclustercellop.o $(ROOTFILTER)/vsinterpolateop.o $(ROOTFILTER)/vspolarop.o $(ROOTFILTER)/vssplittableop.o $(ROOTUTILS)/historyXmlWriter.o $(ROOTFILTER)/startFilter.o
 OBJFILTER=  $(ROOTUTILS)/build/fparser.o $(ROOTFILTER)/build/vsLine.o $(ROOTFILTER)/build/vscoarsevolumeop.o  $(ROOTFILTER)/build/vsmathop.o $(ROOTFILTER)/build/vsprinttableop.o $(ROOTFILTER)/build/vsstatisticop.o $(ROOTFILTER)/build/fpoptimizer.o  $(ROOTFILTER)/build/vsVector.o $(ROOTFILTER)/build/vscutop.o  $(ROOTFILTER)/build/vsmergeop.o  $(ROOTFILTER)/build/vsrandomizertableop.o $(ROOTFILTER)/build/vsswapop.o $(ROOTFILTER)/build/mainFilter.o $(ROOTFILTER)/build/vsVoxel.o $(ROOTFILTER)/build/vsdecimatorop.o $(ROOTFILTER)/build/vsmoduleop.o $(ROOTFILTER)/build/vsselectcolumnsop.o $(ROOTUTILS)/build/vstable.o $(ROOTUTILS)/build/parametersparser.o $(ROOTFILTER)/build/vsaddidop.o $(ROOTFILTER)/build/vsexampleop.o $(ROOTFILTER)/build/vsmrcampos.o $(ROOTFILTER)/build/vsselectfieldop.o $(ROOTFILTER)/build/vstableop.o $(ROOTUTILS)/build/tinystr.o $(ROOTFILTER)/build//vsextractlistrowsop.o $(ROOTFILTER)/build//vsmuportalop.o $(ROOTFILTER)/build//vsselectvol.o  $(ROOTUTILS)/build/tinyxml.o  $(ROOTFILTER)/build//vsextractsubvolumeop.o  $(ROOTUTILS)/build//vsobject.o  $(ROOTFILTER)/build//vsshowtableop.o  $(ROOTFILTER)/build//vsvisualop.o  $(ROOTUTILS)/build/tinyxmlerror.o  $(ROOTFILTER)/build//vsappend.o  $(ROOTFILTER)/build//vsgrid2pointdistr.o $(ROOTFILTER)/build//vspointdistributeop.o $(ROOTFILTER)/build//vssigmacontoursop.o $(ROOTFILTER)/build//vsvollimit.o  $(ROOTUTILS)/build//tinyxmlparser.o  $(ROOTFILTER)/build//vschangecolnameop.o $(ROOTFILTER)/build//vsincludeop.o $(ROOTFILTER)/build//vspointpropertyop.o $(ROOTFILTER)/build//vssphereop.o  $(ROOTFILTER)/build//vswrvotableop.o  $(ROOTUTILS)/build/util.o $(ROOTFILTER)/build//vsclustercellop.o $(ROOTFILTER)/build//vsinterpolateop.o $(ROOTFILTER)/build//vspolarop.o $(ROOTFILTER)/build//vssplittableop.o  $(ROOTUTILS)/build/historyXmlWriter.o  $(ROOTFILTER)/build//startFilter.o
@@ -46,111 +46,111 @@ INCLUDE = -I$(VSINC) -I$(ROOTIMPORTER) -I$(ROOTFILTER) -I$(ROOTUTILS) -I$(ROOTVS
 
 CPPFLAGS=  -DLIGHT -DMAC -std=c++17
 
-LIBRARYPATH =-L/usr/local/lib -L/opt/local/lib -L$(HDF5)/lib -L$(CFITSIO)/lib -L$(VTK_LIB)
+LIBRARYPATH = -L$(HDF5)/lib -L$(CFITSIO)/lib -L$(VTK_LIB)
 LIB = -lcurl -lhdf5 -lcfitsio -lm
 
-LIBVTK= -lvtkChartsCore-9.0 \
-        -lvtkCommonColor-9.0 \
-        -lvtkCommonComputationalGeometry-9.0 \
-        -lvtkCommonCore-9.0 \
-        -lvtkCommonDataModel-9.0 \
-        -lvtkCommonExecutionModel-9.0 \
-        -lvtkCommonMath-9.0 \
-        -lvtkCommonMisc-9.0 \
-        -lvtkCommonSystem-9.0 \
-        -lvtkCommonTransforms-9.0 \
-        -lvtkDICOMParser-9.0 \
-        -lvtkDomainsChemistry-9.0 \
-        -lvtkdoubleconversion-9.0 \
-        -lvtkexpat-9.0 \
-        -lvtkFiltersAMR-9.0 \
-        -lvtkFiltersCore-9.0 \
-        -lvtkFiltersExtraction-9.0 \
-        -lvtkFiltersFlowPaths-9.0 \
-        -lvtkFiltersGeneral-9.0 \
-        -lvtkFiltersGeneric-9.0 \
-        -lvtkFiltersGeometry-9.0 \
-        -lvtkFiltersHybrid-9.0 \
-        -lvtkFiltersHyperTree-9.0 \
-        -lvtkFiltersImaging-9.0 \
-        -lvtkFiltersModeling-9.0 \
-        -lvtkFiltersParallel-9.0 \
-        -lvtkFiltersParallelImaging-9.0 \
-        -lvtkFiltersProgrammable-9.0 \
-        -lvtkFiltersSMP-9.0 \
-        -lvtkFiltersSelection-9.0 \
-        -lvtkFiltersSources-9.0 \
-        -lvtkFiltersStatistics-9.0 \
-        -lvtkFiltersTexture-9.0 \
-        -lvtkFiltersVerdict-9.0 \
-        -lvtkglew-9.0 \
-        -lvtkGeovisCore-9.0 \
-        -lvtkIOAMR-9.0 \
-        -lvtkIOCore-9.0 \
-        -lvtkIOEnSight-9.0 \
-        -lvtkIOExodus-9.0 \
-        -lvtkIOExport-9.0 \
-        -lvtkIOGeometry-9.0 \
-        -lvtkIOImage-9.0 \
-        -lvtkIOImport-9.0 \
-        -lvtkIOInfovis-9.0 \
-        -lvtkIOLSDyna-9.0 \
-        -lvtkIOLegacy-9.0 \
-        -lvtkIOMINC-9.0 \
-        -lvtkIOMovie-9.0 \
-        -lvtkIOPLY-9.0 \
-        -lvtkIOParallel-9.0 \
-        -lvtkIOParallelXML-9.0 \
-        -lvtkIOSQL-9.0 \
-        -lvtkIOVideo-9.0 \
-        -lvtkIOXML-9.0 \
-        -lvtkIOXMLParser-9.0 \
-        -lvtkImagingColor-9.0 \
-        -lvtkImagingCore-9.0 \
-        -lvtkImagingFourier-9.0 \
-        -lvtkImagingGeneral-9.0 \
-        -lvtkImagingHybrid-9.0 \
-        -lvtkImagingMath-9.0 \
-        -lvtkImagingMorphological-9.0 \
-        -lvtkImagingSources-9.0 \
-        -lvtkImagingStatistics-9.0 \
-        -lvtkImagingStencil-9.0 \
-        -lvtkInfovisCore-9.0 \
-        -lvtkInfovisLayout-9.0 \
-        -lvtkInteractionImage-9.0 \
-        -lvtkInteractionStyle-9.0 \
-        -lvtkInteractionWidgets-9.0 \
-        -lvtkloguru-9.0 \
-        -lvtklz4-9.0 \
-        -lvtklzma-9.0 \
-        -lvtkParallelCore-9.0 \
-        -lvtkParallelDIY-9.0 \
-        -lvtkRenderingAnnotation-9.0 \
-        -lvtkRenderingContext2D-9.0  \
-        -lvtkRenderingCore-9.0 \
-        -lvtkRenderingFreeType-9.0 \
-        -lvtkRenderingFreeType-9.0 \
-        -lvtkRenderingGL2PSOpenGL2-9.0 \
-        -lvtkRenderingImage-9.0 \
-        -lvtkRenderingLOD-9.0 \
-        -lvtkRenderingLabel-9.0 \
-        -lvtkRenderingOpenGL2-9.0 \
-        -lvtkRenderingUI-9.0 \
-        -lvtkRenderingVolume-9.0 \
-        -lvtkRenderingVolumeOpenGL2-9.0 \
-        -lvtkViewsContext2D-9.0 \
-        -lvtkViewsCore-9.0 \
-        -lvtkViewsInfovis-9.0 \
-        -lvtkexodusII-9.0 \
-        -lvtkfreetype-9.0 \
-        -lvtkgl2ps-9.0  \
-        -lvtkjsoncpp-9.0 \
-        -lvtkmetaio-9.0 \
-        -lvtkogg-9.0  \
-        -lvtksqlite-9.0 \
-        -lvtksys-9.0 \
-        -lvtkverdict-9.0 \
-        -lvtkzlib-9.0 \
+LIBVTK= -lvtkChartsCore-9.1 \
+        -lvtkCommonColor-9.1 \
+        -lvtkCommonComputationalGeometry-9.1 \
+        -lvtkCommonCore-9.1 \
+        -lvtkCommonDataModel-9.1 \
+        -lvtkCommonExecutionModel-9.1 \
+        -lvtkCommonMath-9.1 \
+        -lvtkCommonMisc-9.1 \
+        -lvtkCommonSystem-9.1 \
+        -lvtkCommonTransforms-9.1 \
+        -lvtkDICOMParser-9.1 \
+        -lvtkDomainsChemistry-9.1 \
+        -lvtkdoubleconversion-9.1 \
+        -lvtkexpat-9.1 \
+        -lvtkFiltersAMR-9.1 \
+        -lvtkFiltersCore-9.1 \
+        -lvtkFiltersExtraction-9.1 \
+        -lvtkFiltersFlowPaths-9.1 \
+        -lvtkFiltersGeneral-9.1 \
+        -lvtkFiltersGeneric-9.1 \
+        -lvtkFiltersGeometry-9.1 \
+        -lvtkFiltersHybrid-9.1 \
+        -lvtkFiltersHyperTree-9.1 \
+        -lvtkFiltersImaging-9.1 \
+        -lvtkFiltersModeling-9.1 \
+        -lvtkFiltersParallel-9.1 \
+        -lvtkFiltersParallelImaging-9.1 \
+        -lvtkFiltersProgrammable-9.1 \
+        -lvtkFiltersSMP-9.1 \
+        -lvtkFiltersSelection-9.1 \
+        -lvtkFiltersSources-9.1 \
+        -lvtkFiltersStatistics-9.1 \
+        -lvtkFiltersTexture-9.1 \
+        -lvtkFiltersVerdict-9.1 \
+        -lvtkglew-9.1 \
+        -lvtkGeovisCore-9.1 \
+        -lvtkIOAMR-9.1 \
+        -lvtkIOCore-9.1 \
+        -lvtkIOEnSight-9.1 \
+        -lvtkIOExodus-9.1 \
+        -lvtkIOExport-9.1 \
+        -lvtkIOGeometry-9.1 \
+        -lvtkIOImage-9.1 \
+        -lvtkIOImport-9.1 \
+        -lvtkIOInfovis-9.1 \
+        -lvtkIOLSDyna-9.1 \
+        -lvtkIOLegacy-9.1 \
+        -lvtkIOMINC-9.1 \
+        -lvtkIOMovie-9.1 \
+        -lvtkIOPLY-9.1 \
+        -lvtkIOParallel-9.1 \
+        -lvtkIOParallelXML-9.1 \
+        -lvtkIOSQL-9.1 \
+        -lvtkIOVideo-9.1 \
+        -lvtkIOXML-9.1 \
+        -lvtkIOXMLParser-9.1 \
+        -lvtkImagingColor-9.1 \
+        -lvtkImagingCore-9.1 \
+        -lvtkImagingFourier-9.1 \
+        -lvtkImagingGeneral-9.1 \
+        -lvtkImagingHybrid-9.1 \
+        -lvtkImagingMath-9.1 \
+        -lvtkImagingMorphological-9.1 \
+        -lvtkImagingSources-9.1 \
+        -lvtkImagingStatistics-9.1 \
+        -lvtkImagingStencil-9.1 \
+        -lvtkInfovisCore-9.1 \
+        -lvtkInfovisLayout-9.1 \
+        -lvtkInteractionImage-9.1 \
+        -lvtkInteractionStyle-9.1 \
+        -lvtkInteractionWidgets-9.1 \
+        -lvtkloguru-9.1 \
+        -lvtklz4-9.1 \
+        -lvtklzma-9.1 \
+        -lvtkParallelCore-9.1 \
+        -lvtkParallelDIY-9.1 \
+        -lvtkRenderingAnnotation-9.1 \
+        -lvtkRenderingContext2D-9.1  \
+        -lvtkRenderingCore-9.1 \
+        -lvtkRenderingFreeType-9.1 \
+        -lvtkRenderingFreeType-9.1 \
+        -lvtkRenderingGL2PSOpenGL2-9.1 \
+        -lvtkRenderingImage-9.1 \
+        -lvtkRenderingLOD-9.1 \
+        -lvtkRenderingLabel-9.1 \
+        -lvtkRenderingOpenGL2-9.1 \
+        -lvtkRenderingUI-9.1 \
+        -lvtkRenderingVolume-9.1 \
+        -lvtkRenderingVolumeOpenGL2-9.1 \
+        -lvtkViewsContext2D-9.1 \
+        -lvtkViewsCore-9.1 \
+        -lvtkViewsInfovis-9.1 \
+        -lvtkexodusII-9.1 \
+        -lvtkfreetype-9.1 \
+        -lvtkgl2ps-9.1  \
+        -lvtkjsoncpp-9.1 \
+        -lvtkmetaio-9.1 \
+        -lvtkogg-9.1  \
+        -lvtksqlite-9.1 \
+        -lvtksys-9.1 \
+        -lvtkverdict-9.1 \
+        -lvtkzlib-9.1 \
 
 all: VisIVOImporter VisIVOFilter VisIVOUtils VisIVOViewer
 

@@ -46,6 +46,7 @@
 #include "rawpointssource.h"
 #include "muportalsource.h"
 #include "ramsessource.h"
+#include "vtksource.h"
 #ifdef WIN32
 	#include <io.h>
 #else
@@ -641,10 +642,14 @@ int CommandLine::loadFile ()
         
 		else if(m_type=="muportal")
 			pSource = new MuPortalSource();
-		else if(m_type=="ramses"){
+
+		else if(m_type=="ramses")
 		  pSource = new RamsesSource();
 
-		}
+		else if(m_type=="vtk")
+		  pSource = new VTKSource();
+
+		
 		else
 		{ 
 			std::cerr<<"the format given '"<<m_type<<"' is incorrect, please try again  or --help for help"<<std::endl;
@@ -685,9 +690,9 @@ void CommandLine::showHelp ()
 {
   
 	std::cout<<std::endl;
-   	std::cout<<"VisIVOImporter Version 2.1.1 June 28th 2013 "<<std::endl<<std::endl;
+   	std::cout<<"VisIVOImporter Version 2.2.1 May 2022 "<<std::endl<<std::endl;
   
-	std::cout<<" --fformat   [typefile]  (mandatory) Select file type: ascii, csv, votable, binary, fly, gadget, xml, rawpoints, rawgrids, fitstable, fitsimage, hdf5, muportal, ramses"<<std::endl<<std::endl;
+	std::cout<<" --fformat   [typefile]  (mandatory) Select file type: ascii, csv, votable, binary, fly, gadget, xml, rawpoints, rawgrids, fitstable, fitsimage, hdf5, muportal, ramses, vtk"<<std::endl<<std::endl;
 
 	std::cout<<"[pathfile] (mandatory) Absolute path file. Path must be the last command( /home/user/myfile.ascii)"<<std::endl<<std::endl;
 
