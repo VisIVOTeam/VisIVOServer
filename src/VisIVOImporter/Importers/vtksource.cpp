@@ -6,12 +6,18 @@
 #include <fstream>
 #include <sstream>
 
+VTKSource::VTKSource()
+{
+    std::cout<<"VTKSource"<<std::endl;
+}
+
 
 //---------------------------------------------------------------------
 int VTKSource::readHeader()
 //---------------------------------------------------------------------
 {
-  return 1;
+    std::cout<<"readHeader"<<std::endl;
+    return 0;
 }
 
 //---------------------------------------------------------------------
