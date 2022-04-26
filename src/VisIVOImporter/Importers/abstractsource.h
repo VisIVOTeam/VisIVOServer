@@ -32,6 +32,7 @@ class AbstractSource
 
   public:
     AbstractSource();
+    virtual ~AbstractSource() = default;
 
     void setPointsFileName(const char* fileName, const char* binaryName, 
 			   const char* tableOrVolume, double size[], 

@@ -21,7 +21,7 @@ class VTKSource : public AbstractSource
     int readHeader();
     int readData();
     VTKSource();
-    ~VTKSource();
+    ~VTKSource() = default;
 
 
 };
