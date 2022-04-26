@@ -20,6 +20,8 @@ CFITSIO= /opt/cfitsio-4.0_arm64/
 VTK_LIB=/opt/VTK-9.1.0_arm64/lib/
 VTKDIR_INC=/opt/VTK-9.1.0_arm64/include/vtk-9.1/
 
+-include Includes.mk
+
 SRCIMPORTER= $(ROOTIMPORTER)/abstractsource.o	$(ROOTIMPORTER)/binsource.o		$(ROOTIMPORTER)/fitsimagesource.o	$(ROOTIMPORTER)/flysource.o			$(ROOTIMPORTER)/mainImporter.o	$(ROOTIMPORTER)/ramsessource.o	$(ROOTIMPORTER)/rawpointssource.o	$(ROOTIMPORTER)/vosourcenew.o $(ROOTIMPORTER)/asciisource.o $(ROOTIMPORTER)/csvsource.o $(ROOTIMPORTER)/fitstablesource.o	$(ROOTIMPORTER)/gadgetsource.o	$(ROOTIMPORTER)/hdf5source.o $(ROOTIMPORTER)/muportalsource.o	$(ROOTIMPORTER)/rawgridsource.o $(ROOTIMPORTER)/vtksource.o $(ROOTUTILS)/tinystr.o $(ROOTUTILS)/tinyxml.o $(ROOTUTILS)/tinyxmlerror.o $(ROOTUTILS)/tinyxmlparser.o $(ROOTUTILS)/historyXmlWriter.o $(ROOTUTILS)/commandline.o $(ROOTUTILS)/visivoutils.o  
 OBJIMPORTER= $(ROOTIMPORTER)/build/abstractsource.o $(ROOTIMPORTER)/build/binsource.o $(ROOTIMPORTER)/build/fitsimagesource.o $(ROOTIMPORTER)/build/flysource.o $(ROOTIMPORTER)/build/mainImporter.o $(ROOTIMPORTER)/build/ramsessource.o $(ROOTIMPORTER)/build/rawpointssource.o $(ROOTIMPORTER)/build/vosourcenew.o $(ROOTIMPORTER)/build/asciisource.o $(ROOTIMPORTER)/build/csvsource.o $(ROOTIMPORTER)/build/fitstablesource.o $(ROOTIMPORTER)/build/gadgetsource.o $(ROOTIMPORTER)/build/hdf5source.o $(ROOTIMPORTER)/build/muportalsource.o $(ROOTIMPORTER)/build/rawgridsource.o $(ROOTIMPORTER)/build/vtksource.o $(ROOTUTILS)/build/tinystr.o $(ROOTUTILS)/build/tinyxml.o $(ROOTUTILS)/build/tinyxmlerror.o $(ROOTUTILS)/build/tinyxmlparser.o $(ROOTUTILS)/build/historyXmlWriter.o $(ROOTUTILS)/build/commandline.o $(ROOTUTILS)/build/visivoutils.o 
 
@@ -44,7 +46,7 @@ endif
 
 INCLUDE = -I$(VSINC) -I$(ROOTIMPORTER) -I$(ROOTFILTER) -I$(ROOTUTILS) -I$(ROOTVSUTILS) -I$(BOOST) -I$(VTKDIR_INC) -I$(ROOTVIEWER) -I$(CFITSIO)/include/ -I$(HDF5)/include/ -I/opt/local/include/ -I/usr/local/include/
 
-CPPFLAGS=  -DLIGHT -DMAC -std=c++17
+CPPFLAGS=  -DLIGHT -DMAC -std=c++17 -g
 
 LIBRARYPATH = -L$(HDF5)/lib -L$(CFITSIO)/lib -L$(VTK_LIB)
 LIB = -lcurl -lhdf5 -lcfitsio -lm
