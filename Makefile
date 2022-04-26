@@ -178,7 +178,7 @@ all: VisIVOImporter VisIVOFilter VisIVOUtils VisIVOViewer
 
 VisIVOImporter: $(SRCIMPORTER)
 	@mkdir -p build
-	$(CPP) $(CPPFLAGS) -o build/VisIVOImporter $(OBJIMPORTER) $(INCLUDE) $(LIBRARYPATH) $(LIB)
+	$(CPP) $(CPPFLAGS) -o build/VisIVOImporter $(OBJIMPORTER) $(INCLUDE) $(LIBRARYPATH) $(LIB)  $(LIBVTK)
 
 VisIVOFilter: $(SRCFILTER)
 	@mkdir -p build
