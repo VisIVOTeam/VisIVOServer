@@ -25,21 +25,18 @@
 
 class VSTextCol : public VSUtilOp
 {
-	
-	
+
 public:
     VSTextCol();
     // ~VSLoadHistoryUT();
     void printHelp();
     bool execute();
+
 private:
     std::string m_inFile;
     std::string m_outFile;
     std::string m_colName;
     bool extractColumn();
-    
-    
 };
-
 
 #endif /* defined(__VisIVOServer_New072012__vstextcol__) */

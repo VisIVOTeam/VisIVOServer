@@ -21,20 +21,14 @@
 #ifndef CSVSOURCE_H
 #define CSVSOURCE_H
 
-
 #include "abstractsource.h"
 
 class CSVSource : public AbstractSource
 {
-  public:
- 
+public:
   //! Read the header file and set the basic table parameters
-    int readHeader();
-    int readData();
-
+  int readHeader();
+  int readData();
 };
 
 #endif
-
-
-

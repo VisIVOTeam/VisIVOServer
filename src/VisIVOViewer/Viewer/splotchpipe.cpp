@@ -27,43 +27,39 @@
 #include <sstream>
 #include <algorithm>
 
-int splotchMain (VisIVOServerOptions opt);
+int splotchMain(VisIVOServerOptions opt);
 
 //---------------------------------------------------------------------
-SplotchPipe::SplotchPipe ( VisIVOServerOptions options)
+SplotchPipe::SplotchPipe(VisIVOServerOptions options)
 //---------------------------------------------------------------------
 {
-  m_visOpt=options;
+  m_visOpt = options;
 }
 //---------------------------------
 SplotchPipe::~SplotchPipe()
 //---------------------------------
 {
-
 }
 
 //------------------------------------------------------------------------------
-int SplotchPipe::createPipe ()
+int SplotchPipe::createPipe()
 //------------------------------------------------------------------------------
 {
   int i = 0;
   int j = 0;
- 
+
   std::ifstream inFile;
   inFile.open(m_visOpt.path.c_str());
-  if(!inFile.is_open())
+  if (!inFile.is_open())
   {
-	std::cerr<<"Input splotch.par file does not exist"<<std::endl;
-	return 0;	
+    std::cerr << "Input splotch.par file does not exist" << std::endl;
+    return 0;
   }
- //!open binary file. m_visOpt is the structure (parameter of the constructor) that contain alla data to be visualized
- // std::clog<<m_visOpt.path.c_str()<<std::endl;
-  
+  //! open binary file. m_visOpt is the structure (parameter of the constructor) that contain alla data to be visualized
+  // std::clog<<m_visOpt.path.c_str()<<std::endl;
 
-  
   inFile.close();
   splotchMain(m_visOpt);
- 
-    return 0;
-}
 
+  return 0;
+}

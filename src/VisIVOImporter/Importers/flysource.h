@@ -29,23 +29,14 @@
 
 class FlySource : public AbstractSource
 {
-  public:
- 
+public:
   //! Read the header file and set the basic table parameters
-    int readHeader();
-    int readData();
-  private:
-  
-    std::string m_endianType;
-    std::vector<std::string> m_files;
+  int readHeader();
+  int readData();
 
-    
-
- 
-
+private:
+  std::string m_endianType;
+  std::vector<std::string> m_files;
 };
 
 #endif
-
-
-

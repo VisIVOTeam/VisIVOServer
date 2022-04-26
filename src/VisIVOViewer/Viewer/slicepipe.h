@@ -23,27 +23,23 @@
 
 #include "pipe.h"
 
-
 class vtkImageData;
-    //class VolumeSlicer;
-    class vtkTexture;
-     class vtkStructuredGrid;
-      class vtkStructuredGridGeometryFilter;
- 
+// class VolumeSlicer;
+class vtkTexture;
+class vtkStructuredGrid;
+class vtkStructuredGridGeometryFilter;
 
-
-    class SlicerPipe: public Pipe
+class SlicerPipe : public Pipe
 {
-  public:
-    SlicerPipe( VisIVOServerOptions options);
-    ~SlicerPipe();
-   
-  protected:
-   
-    int createPipe();
-  vtkStructuredGrid *m_sgrid;  
-   vtkStructuredGridGeometryFilter *m_1; 
-  private:
- 
+public:
+  SlicerPipe(VisIVOServerOptions options);
+  ~SlicerPipe();
+
+protected:
+  int createPipe();
+  vtkStructuredGrid *m_sgrid;
+  vtkStructuredGridGeometryFilter *m_1;
+
+private:
 };
 #endif

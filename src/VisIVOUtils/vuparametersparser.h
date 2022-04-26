@@ -29,19 +29,19 @@
 
 class VUParametersParser
 {
-  std::string trimRight(const std::string & source, const std::string & t = " ");
-  std::string trimLeft(const std::string & source, const std::string & t = " ");
-  std::string trim(const std::string & source, const std::string & t = " ");
+  std::string trimRight(const std::string &source, const std::string &t = " ");
+  std::string trimLeft(const std::string &source, const std::string &t = " ");
+  std::string trim(const std::string &source, const std::string &t = " ");
 
   std::map<std::string, std::string> m_parameters;
-  
-  public:
-    VUParametersParser(std::string parameters);
-    ~VUParametersParser();
 
-    std::map<std::string, std::string> getParameters() {return m_parameters;};
+public:
+  VUParametersParser(std::string parameters);
+  ~VUParametersParser();
 
-    void printSelf();
+  std::map<std::string, std::string> getParameters() { return m_parameters; };
+
+  void printSelf();
 };
 
 #endif

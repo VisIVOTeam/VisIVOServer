@@ -21,7 +21,7 @@
 #define VSCREATEPATH_H
 
 /**
-	@author 
+	@author
 */
 
 #include "vsutils.h"
@@ -46,14 +46,13 @@ class VSCreatePathUT : public VSUtilOp
 	bool m_zoomend;
 	std::string m_outFile;
 
-  static const double INVALID_CAM;
-	
-public:
-    VSCreatePathUT();
-    ~VSCreatePathUT(){};
-    void printHelp();
-    bool execute();
+	static const double INVALID_CAM;
 
+public:
+	VSCreatePathUT();
+	~VSCreatePathUT(){};
+	void printHelp();
+	bool execute();
 };
 
 #endif

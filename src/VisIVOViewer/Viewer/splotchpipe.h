@@ -21,27 +21,20 @@
 #ifndef SPLOTCHPIPE_H
 #define SPLOTCHPIPE_H
 
-
 #include "pipe.h"
 #include "optionssetter.h"
 
-   
-  
 // Define a new frame type: this is going to be our main frame
-    class SplotchPipe: public Pipe
+class SplotchPipe : public Pipe
 {
-  public:
-    SplotchPipe( VisIVOServerOptions options);
-    ~SplotchPipe();
-   
-  protected:
-   
-   int createPipe();
+public:
+  SplotchPipe(VisIVOServerOptions options);
+  ~SplotchPipe();
 
+protected:
+  int createPipe();
 
-
-  private:
-
+private:
 };
 
 #endif

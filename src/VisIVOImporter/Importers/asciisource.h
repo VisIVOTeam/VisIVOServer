@@ -28,10 +28,9 @@
 
 class AsciiSource : public AbstractSource
 {
-  public:
-    int readHeader();
-    int readData();
-
+public:
+  int readHeader();
+  int readData();
 };
 
 #endif

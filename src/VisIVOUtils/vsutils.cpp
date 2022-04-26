@@ -24,59 +24,56 @@
 // #include <iostream>
 // #include <set>
 
-//const unsigned int VSUtilOp::MAX_NUMBER_INT = 2147483647;
+// const unsigned int VSUtilOp::MAX_NUMBER_INT = 2147483647;
 const unsigned int VSUtilOp::MAX_NUMBER_INT = 250000000;
-//const unsigned int VSUtilOp::MAX_NUMBER_INT = 66000;
+// const unsigned int VSUtilOp::MAX_NUMBER_INT = 66000;
 
 VSUtilOp::VSUtilOp()
 {
   m_maxNumberInt = MAX_NUMBER_INT;
-//  m_maxNumberInt = 13; Only for debug
+  //  m_maxNumberInt = 13; Only for debug
 }
-
-
 
 VSUtilOp::~VSUtilOp()
 {
 }
-
 
 // bool VSUtilOp::addInput(VSTable *table)
 // {
 //   if(table)
 //   {
 //     m_tables.push_back(table);
-//     
+//
 //     return true;
 //   }
-//   
+//
 //   return false;
 // }
 
-bool VSUtilOp::addParameter(std::string key,std::string value)
+bool VSUtilOp::addParameter(std::string key, std::string value)
 {
- 
-/*  key = trim(key);
-  value = trim(value);*/
 
-//Erase  "-" or "--" in key value if any.
+  /*  key = trim(key);
+    value = trim(value);*/
+
+  // Erase  "-" or "--" in key value if any.
   std::map<std::string, std::string>::iterator iter;
 
-  if(key[0] == '-')
+  if (key[0] == '-')
     key.erase(0, 1);
 
-  if(key[0] == '-')
+  if (key[0] == '-')
     key.erase(0, 1);
 
-  if(!m_parameters.count(key))
-    m_parameters.insert(make_pair(key, value)); //insert new parameter
+  if (!m_parameters.count(key))
+    m_parameters.insert(make_pair(key, value)); // insert new parameter
   else
   {
-    iter=m_parameters.find(key);
+    iter = m_parameters.find(key);
     m_parameters.erase(iter);
-    m_parameters.insert(make_pair(key, value)); //substitute the existing parameter
+    m_parameters.insert(make_pair(key, value)); // substitute the existing parameter
   }
-return true; 
+  return true;
 }
 
 // bool VSUtilOp::setParameters(std::string parameters)
@@ -84,70 +81,70 @@ return true;
 //   std::string dummy = "";
 //   std::string key   = "";
 //   std::string value = "";
-//   
+//
 //   std::stringstream ss(parameters);
 //   std::streampos pos;
-// 
+//
 //   while(!ss.eof())
 //   {
 //     ss >> dummy;
-// 
+//
 //     if(dummy[0] != '-')
 //       return false;
-// 
+//
 //     dummy.erase(0, 1);
-// 
+//
 //     if(dummy[0] == '-')
 //       dummy.erase(0, 1);
-// 
+//
 //     key = dummy;
-// 
+//
 //     if(ss.eof())
 //     {
 //       value = "unknown";
-// 
+//
 //       m_parameters.insert(make_pair(key, value));
-//       
+//
 //       break;
 //     }
-// 
+//
 //     pos = ss.tellg();
-//     
+//
 //     ss >> dummy;
-// 
+//
 //     if(dummy[0] == '-')
 //     {
 //       if(ss.eof())
 //         ss.clear();
-// 
+//
 //       ss.seekg(pos);
-// 
+//
 //       value = "unknown";
-// 
+//
 //       m_parameters.insert(make_pair(key, value));
-// 
+//
 //       continue;
 //     }
-// 
+//
 //     value = dummy;
-// 
+//
 //     m_parameters.insert(make_pair(key, value));
 //   }
-// 
+//
 //   return false;
 // }
 
 std::string VSUtilOp::getParameterAsString(std::string parameter)
 {
-  if(!m_parameters.count(parameter))
+  if (!m_parameters.count(parameter))
     return "";
-  
+
   return m_parameters.find(parameter)->second;
 }
 
 int VSUtilOp::getParameterAsInt(std::string parameter)
 {
-  if(!m_parameters.count(parameter))
+  if (!m_parameters.count(parameter))
     return 0;
 
   std::stringstream ss(m_parameters.find(parameter)->second);
@@ -159,10 +156,9 @@ int VSUtilOp::getParameterAsInt(std::string parameter)
   return ret;
 }
 
-    
 float VSUtilOp::getParameterAsFloat(std::string parameter)
 {
-  if(!m_parameters.count(parameter))
+  if (!m_parameters.count(parameter))
     return 0;
 
   std::stringstream ss(m_parameters.find(parameter)->second);
@@ -173,4 +169,3 @@ float VSUtilOp::getParameterAsFloat(std::string parameter)
 
   return ret;
 }
-

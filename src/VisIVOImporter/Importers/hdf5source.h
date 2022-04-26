@@ -17,40 +17,37 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
- 
+
 #ifndef HDF5SOURCE_H
 #define HDF5SOURCE_H
-
 
 #include "abstractsource.h"
 #include "hdf5.h"
 
-    struct hyperdef
-    { 
-      std::string datasetName;
-      int offset[1000];
-      unsigned long long int count[1000];
-    };
+struct hyperdef
+{
+  std::string datasetName;
+  int offset[1000];
+  unsigned long long int count[1000];
+};
 
 class HDF5Source : public AbstractSource
 {
-  public:
- 
+public:
   //! Read the header file and set the basic table parameters
-    int readHeader();
-    int readData();
-  private:
-    std::vector<std::string> m_vDatasetList; //! dataset name list
-    hid_t m_sourceId;
-    int m_nOfDatasets;
-    unsigned long long int m_maxNumberOfRows;
-    bool m_invalidFile;
-    std::vector<hyperdef> m_hyperslabStruct;
+  int readHeader();
+  int readData();
 
-    bool checkhyperslab();
-    void readVolume();
-    void readTable();
+private:
+  std::vector<std::string> m_vDatasetList; //! dataset name list
+  hid_t m_sourceId;
+  int m_nOfDatasets;
+  unsigned long long int m_maxNumberOfRows;
+  bool m_invalidFile;
+  std::vector<hyperdef> m_hyperslabStruct;
 
-
+  bool checkhyperslab();
+  void readVolume();
+  void readTable();
 };
 #endif

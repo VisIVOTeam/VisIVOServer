@@ -21,7 +21,7 @@
 #define VSCREATESLICES_H
 
 /**
-	@author 
+	@author
 */
 
 #include "vsutils.h"
@@ -35,11 +35,10 @@ class VSCreateSlicesUT : public VSUtilOp
 	std::string m_inputFile;
 
 public:
-    VSCreateSlicesUT();
-    ~VSCreateSlicesUT(){};
-    void printHelp();
-    bool execute();
-
+	VSCreateSlicesUT();
+	~VSCreateSlicesUT(){};
+	void printHelp();
+	bool execute();
 };
 
 #endif

@@ -23,7 +23,6 @@
 
 #include "vtkPolyDataMapper.h"
 
-
 #include "optionssetter.h"
 
 class vtkRenderer;
@@ -31,37 +30,29 @@ class vtkRenderWindow;
 class vtkCamera;
 class vtkLookupTable;
 
-
-
 class Pipe
 {
- 
-  public:
 
-    void saveImageAsPng(int num );
-      void destroyAll(){};
-    virtual  int createPipe();
-    void setAxes(vtkDataSet *data,double *bounds){};   
-   
-    
-  protected:
-    
-    void setCamera ();
-    void constructVTK();
-     void destroyVTK();
-     void setBoundingBox ( vtkDataObject *data );
-     void colorBar ();
-     
-    VisIVOServerOptions m_visOpt;
-    
-     vtkCamera          *m_camera;
-     
-    vtkRenderer       *m_pRenderer;
-    vtkRenderWindow   *m_pRenderWindow;
-    vtkLookupTable      *m_lut;
-    
+public:
+  void saveImageAsPng(int num);
+  void destroyAll(){};
+  virtual int createPipe();
+  void setAxes(vtkDataSet *data, double *bounds){};
 
+protected:
+  void setCamera();
+  void constructVTK();
+  void destroyVTK();
+  void setBoundingBox(vtkDataObject *data);
+  void colorBar();
+
+  VisIVOServerOptions m_visOpt;
+
+  vtkCamera *m_camera;
+
+  vtkRenderer *m_pRenderer;
+  vtkRenderWindow *m_pRenderWindow;
+  vtkLookupTable *m_lut;
 };
 
 #endif
-

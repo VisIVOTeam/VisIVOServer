@@ -21,64 +21,58 @@
 #ifndef POINTSSMOOTHPIPE_H
 #define POINTSSMOOTHPIPE_H
 
-
 #include "pipe.h"
 #include "optionssetter.h"
 
 class vtkActor;
 class vtkSphereSource;
 class vtkConeSource;
-    class vtkCylinderSource;
-    class vtkCubeSource;
-    class vtkGlyph3D;
-    class vtkPoints;
-    
-    class ExtendedGlyph3D;
+class vtkCylinderSource;
+class vtkCubeSource;
+class vtkGlyph3D;
+class vtkPoints;
 
-   
-  
+class ExtendedGlyph3D;
+
 // Define a new frame type: this is going to be our main frame
-    class PointsSmoothPipe: public Pipe
+class PointsSmoothPipe : public Pipe
 {
-  public:
-    PointsSmoothPipe( VisIVOServerOptions options);
-    ~PointsSmoothPipe();
-   
-  protected:
-   
-   int createPipe();
-   void destroyAll();
-   
+public:
+  PointsSmoothPipe(VisIVOServerOptions options);
+  ~PointsSmoothPipe();
+
+protected:
+  int createPipe();
+  void destroyAll();
+
+private:
+  vtkPolyDataMapper *m_pMapper;
+  vtkActor *m_pActor;
+  vtkPolyData *m_pPolyData;
+
+  double m_xRange[2], m_yRange[2], m_zRange[2];
+  bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField);
+  vtkPoints *m_points;
+  //    void setScaling ();
+
+  /*    void setGlyphs (  );
+      void setLookupTable ( );
+      void setRadius ();
+      void setResolution ();
+      bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField  );
+      void setScaling ();
+
+      vtkGlyph3D *m_glyph ;
+      vtkSphereSource   *m_sphere;
+      vtkConeSource   *m_cone;
+      vtkCylinderSource   *m_cylinder;
+      vtkCubeSource   *m_cube;
+
+      ExtendedGlyph3D *m_glyphFilter;
 
 
-  private:
-    vtkPolyDataMapper  *m_pMapper;
-    vtkActor           *m_pActor;
-    vtkPolyData       *m_pPolyData;
-
-    double m_xRange[2] ,m_yRange[2] , m_zRange[2];
-    bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField  );
-    vtkPoints *m_points;
-//    void setScaling ();
-
-/*    void setGlyphs (  );
-    void setLookupTable ( );
-    void setRadius ();
-    void setResolution ();
-    bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField  );
-    void setScaling ();
-     
-    vtkGlyph3D *m_glyph ;
-    vtkSphereSource   *m_sphere;
-    vtkConeSource   *m_cone;
-    vtkCylinderSource   *m_cylinder;
-    vtkCubeSource   *m_cube;
-    
-    ExtendedGlyph3D *m_glyphFilter;
-
-        
-    double m_xRange[2] ,m_yRange[2] , m_zRange[2];
-*/
+      double m_xRange[2] ,m_yRange[2] , m_zRange[2];
+  */
 };
 
 #endif

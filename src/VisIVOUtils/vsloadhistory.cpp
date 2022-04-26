@@ -25,147 +25,129 @@
 #include "tinyxml.h"
 #include "tinystr.h"
 
-
-
 //---------------------------------------------------------------------
 VSLoadHistoryUT::VSLoadHistoryUT()
 //---------------------------------------------------------------------
 {
-    m_outFile="VisIVO.sh";
-
+    m_outFile = "VisIVO.sh";
 }
 //---------------------------------------------------------------------
 void VSLoadHistoryUT::printHelp()
 //---------------------------------------------------------------------
 {
-	std::cout<<"Starting from a history xml file, create a bash script for re execution"<<std::endl<<std::endl;;
+    std::cout << "Starting from a history xml file, create a bash script for re execution" << std::endl
+              << std::endl;
+    ;
 
-	std::cout<<"Usage: VisIVOUtils --op loadhistory --file <hist.xml> [--help]"<<std::endl;
+    std::cout << "Usage: VisIVOUtils --op loadhistory --file <hist.xml> [--help]" << std::endl;
 
-	std::cout<<"Example: VisIVOUtils --op loadhistory --file hist.xml"<<std::endl<<std::endl;
+    std::cout << "Example: VisIVOUtils --op loadhistory --file hist.xml" << std::endl
+              << std::endl;
 
-	std::cout<<"Note: "<<std::endl;
-	
-	std::cout<<"--out output filename. Default filename VisIVO.sh"<<std::endl;
-	std::cout<<"--help produce this output "<<std::endl;
-	std::cout<<"--file Input history file "<<std::endl;
-    
-    
+    std::cout << "Note: " << std::endl;
 
-	return;
+    std::cout << "--out output filename. Default filename VisIVO.sh" << std::endl;
+    std::cout << "--help produce this output " << std::endl;
+    std::cout << "--file Input history file " << std::endl;
 
+    return;
 }
 
 //---------------------------------------------------------------------
 bool VSLoadHistoryUT::execute()
 //---------------------------------------------------------------------
 {
-    
 
-    if(!(getParameterAsString("file").empty() || getParameterAsString("file")=="unknown" ))
+    if (!(getParameterAsString("file").empty() || getParameterAsString("file") == "unknown"))
     {
         std::stringstream sstmp;
         sstmp.str(getParameterAsString("file"));
-        sstmp>>m_inFile;
-        
-
+        sstmp >> m_inFile;
     }
     else
     {
-        std::cerr<<"Error. The file option is not given."<<std::endl;
+        std::cerr << "Error. The file option is not given." << std::endl;
         return false;
     }
 
-    if(isParameterPresent("out"))
+    if (isParameterPresent("out"))
     {
         std::stringstream sstmp;
         sstmp.str(getParameterAsString("out"));
-        sstmp>>m_outFile;
-        
+        sstmp >> m_outFile;
     }
 
     loadXml();
 
     return true;
-
 }
 
 //---------------------------------------------------------------------
 bool VSLoadHistoryUT::loadXml()
 //---------------------------------------------------------------------
 {
-   // std::cout<<"Load history file: "<<m_inFile<<std::endl;
-    
-    TiXmlDocument doc( m_inFile.c_str() );
+    // std::cout<<"Load history file: "<<m_inFile<<std::endl;
+
+    TiXmlDocument doc(m_inFile.c_str());
     bool load = doc.LoadFile();
     if (load)
     {
         TiXmlElement *pRoot, *pComm, *pParam, *pIn, *pOut;
-        pRoot = doc.FirstChildElement( "history" );
-        if ( pRoot )
+        pRoot = doc.FirstChildElement("history");
+        if (pRoot)
         {
             std::ofstream bashFile;
-            bashFile.open (m_outFile.c_str());
-            bashFile << "#!/bin/bash"<< std::endl;
+            bashFile.open(m_outFile.c_str());
+            bashFile << "#!/bin/bash" << std::endl;
 
-            
-            
-            
             // Parse parameters
             pComm = pRoot->FirstChildElement("command");
-            while ( pComm )
+            while (pComm)
             {
-                //std::cout << "Command: value='" << pComm->Attribute("value") << "'" << std::endl;
-             
-                bashFile << pComm->Attribute("value")<<" ";
+                // std::cout << "Command: value='" << pComm->Attribute("value") << "'" << std::endl;
 
-                               
-                pParam = pComm->FirstChildElement("param" );
-                while (pParam) {
-                   // std::cout << "      Param: name='"<<pParam->Attribute("name") <<"' value='" << pParam->Attribute("value") << "'" << std::endl;
-                    
-                    bashFile <<"--"<<pParam->Attribute("name")<<" "<<pParam->Attribute("value")<<" ";
-                    pParam = pParam->NextSiblingElement( "param" );
+                bashFile << pComm->Attribute("value") << " ";
 
+                pParam = pComm->FirstChildElement("param");
+                while (pParam)
+                {
+                    // std::cout << "      Param: name='"<<pParam->Attribute("name") <<"' value='" << pParam->Attribute("value") << "'" << std::endl;
 
-                }
-                
-                pIn = pComm->FirstChildElement("input" );
-                while (pIn) {
-                    //std::cout << "      Input: value='" << pIn->Attribute("value") << "'" << std::endl;
-
-                    bashFile <<"--file \""<<pIn->Attribute("value")<<"\" ";
-                    pIn = pIn->NextSiblingElement( "input" );
-                    
-                }
-                
-                
-                pOut = pComm->FirstChildElement("output" );
-                while (pOut) {
-                   // std::cout << "      Output: value='" << pOut->Attribute("value") << "'" << std::endl;
-	            bashFile <<"--out "<<pOut->Attribute("value")<<" ";
-                    pOut = pOut->NextSiblingElement( "output" );
+                    bashFile << "--" << pParam->Attribute("name") << " " << pParam->Attribute("value") << " ";
+                    pParam = pParam->NextSiblingElement("param");
                 }
 
+                pIn = pComm->FirstChildElement("input");
+                while (pIn)
+                {
+                    // std::cout << "      Input: value='" << pIn->Attribute("value") << "'" << std::endl;
 
-                pComm = pComm->NextSiblingElement( "command" );
+                    bashFile << "--file \"" << pIn->Attribute("value") << "\" ";
+                    pIn = pIn->NextSiblingElement("input");
+                }
+
+                pOut = pComm->FirstChildElement("output");
+                while (pOut)
+                {
+                    // std::cout << "      Output: value='" << pOut->Attribute("value") << "'" << std::endl;
+                    bashFile << "--out " << pOut->Attribute("value") << " ";
+                    pOut = pOut->NextSiblingElement("output");
+                }
+
+                pComm = pComm->NextSiblingElement("command");
                 bashFile << std::endl;
-
             }
-            
-       //     std::cout << std::endl;
-            
-            bashFile.close();
 
+            //     std::cout << std::endl;
+
+            bashFile.close();
         }
         else
         {
             std::cout << "Cannot find 'history' node" << std::endl;
             return false;
-
         }
         return true;
     }
     return false;
 }
-

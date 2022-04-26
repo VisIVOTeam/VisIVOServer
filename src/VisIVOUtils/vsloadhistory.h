@@ -21,26 +21,24 @@
 #define VSLOADHISTORY_H
 
 /**
-	@author 
+    @author
 */
 
 #include "vsutils.h"
 
 class VSLoadHistoryUT : public VSUtilOp
 {
-	
-	
+
 public:
     VSLoadHistoryUT();
-   // ~VSLoadHistoryUT();
+    // ~VSLoadHistoryUT();
     void printHelp();
     bool execute();
+
 private:
     std::string m_inFile;
     std::string m_outFile;
     bool loadXml();
-
-
 };
 
 #endif

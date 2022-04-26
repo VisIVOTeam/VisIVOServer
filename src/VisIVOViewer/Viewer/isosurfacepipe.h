@@ -17,30 +17,28 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
- 
+
 #ifndef ISOSURFACEPIPE_H
 #define ISOSURFACEPIPE_H
- 
+
 #include "pipe.h"
 
-
 #include "optionssetter.h"
- 
-  class vtkImageData;
 
-class IsosurfacePipe: public Pipe
+class vtkImageData;
+
+class IsosurfacePipe : public Pipe
 {
-  public:
-   IsosurfacePipe( VisIVOServerOptions options);
-    ~IsosurfacePipe();
-   
-  protected:
-   
-    int createPipe();
-    void destroyAll();
+public:
+  IsosurfacePipe(VisIVOServerOptions options);
+  ~IsosurfacePipe();
 
-    vtkImageData *m_imageData;
+protected:
+  int createPipe();
+  void destroyAll();
 
-    double m_range[2];
+  vtkImageData *m_imageData;
+
+  double m_range[2];
 };
 #endif

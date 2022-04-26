@@ -2,10 +2,10 @@
 #define VISIVO_H
 
 #include "visivoserver.h"
-#define VV_PARAM 1000 //number of VisIVOViewer STARTING PARAMS
-#define VI_PARAM 0 //number of VisIVOImporter STARTING PARAMS
-#define VF_PARAM 2000 //number of VisIVOFilter STARTING PARAMS
-#define NPAR 1000 //number of PARAMS for each VisIVOServer components
+#define VV_PARAM 1000 // number of VisIVOViewer STARTING PARAMS
+#define VI_PARAM 0    // number of VisIVOImporter STARTING PARAMS
+#define VF_PARAM 2000 // number of VisIVOFilter STARTING PARAMS
+#define NPAR 1000     // number of PARAMS for each VisIVOServer components
 #define MAXCOLNAMESIZE 50;
 // Define Filter Setting Code
 // generic
@@ -93,10 +93,9 @@
 #define VF_SET_OUTPOINTS 2159
 #define VF_SET_OUTVOL 2160
 
-
 // Define Importer Setting Code
 #define VI_SET_FFORMAT 0
-#define VI_SET_FILEPATH 999  // must be the last
+#define VI_SET_FILEPATH 999 // must be the last
 #define VI_SET_OUTFILEVBT 1
 #define VI_SET_VOLUME 2
 #define VI_SET_USERPWD 3
@@ -112,10 +111,9 @@
 #define VI_SET_LFNOUT 13
 #define VI_SET_SE 14
 
-
 // Define Viewer Setting Code
 #define VV_SET_CLEAN 1000
-#define VV_SET_FILEVBT 1499  //must be the last parameter in args
+#define VV_SET_FILEVBT 1499 // must be the last parameter in args
 #define VV_SET_INTERNAL 1500
 #define VV_SET_EXTERNAL 1069
 #define VV_SET_INTERNALFIELD 1503
@@ -191,7 +189,7 @@
 #define VV_SET_VECTORSCALINGFACTOR 1066
 #define VV_SET_VECTORSCALE 1067
 
-//// SPLOTCH SECT 
+//// SPLOTCH SECT
 #define VV_SET_SPL_INTENSITYMIN0 1105
 #define VV_SET_SPL_INTENSITYMAX0 1106
 #define VV_SET_SPLOTCH 1100
@@ -218,9 +216,6 @@
 #define VV_SET_LFNOUT 1125
 #define VV_SET_SE 1126
 
-
-
-
 //// Error codes
 #define noError 0
 #define invalidParCode 1
@@ -237,7 +232,6 @@
 #define invalidImage 12
 #define invaldInputFile 16
 
-
 #define runningThread 13
 #define errorThread 14
 #define successfulEndThread 15
@@ -247,4 +241,3 @@
 #define NOSET_CAM -123456789
 
 #endif
-

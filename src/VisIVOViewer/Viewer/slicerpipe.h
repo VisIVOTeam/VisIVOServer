@@ -25,22 +25,20 @@
 #include "optionssetter.h"
 #include "visivoutils.h"
 
-   class vtkColorTransferFunction;
-        
-        
-   class SlicerPipe: public Pipe
+class vtkColorTransferFunction;
+
+class SlicerPipe : public Pipe
 {
-  public:
-    SlicerPipe( VisIVOServerOptions options);
-    ~SlicerPipe();
-   
-  protected:
-   
-    int createPipe();
-    bool setLookupTable();
-    double m_range[2]; 
-   void destroyAll();
-    
-    vtkColorTransferFunction *m_colorTransferFunction;
+public:
+  SlicerPipe(VisIVOServerOptions options);
+  ~SlicerPipe();
+
+protected:
+  int createPipe();
+  bool setLookupTable();
+  double m_range[2];
+  void destroyAll();
+
+  vtkColorTransferFunction *m_colorTransferFunction;
 };
 #endif

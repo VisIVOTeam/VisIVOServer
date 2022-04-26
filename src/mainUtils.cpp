@@ -21,8 +21,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include<sstream>
-#include<string>
+#include <sstream>
+#include <string>
 
 #include "parametersparser.h"
 #include "vscreatepath.h"
@@ -30,127 +30,128 @@
 #include "vscreategenericslices.h"
 #include "vsloadhistory.h"
 
-
 int main(int argc, char *argv[])
 {
-std::string filename;
-std::stringstream commandParametersSStream;
-std::map<std::string, std::string> appParameters;
-std::map<std::string, std::string>::iterator iter;
+  std::string filename;
+  std::stringstream commandParametersSStream;
+  std::map<std::string, std::string> appParameters;
+  std::map<std::string, std::string>::iterator iter;
 
-for (int i=1;i<argc;i++) 
-{
-	commandParametersSStream<< argv[i]<<" ";
-}
-
-ParametersParser myparser(commandParametersSStream.str());
-
-appParameters=myparser.getParameters();
-
-iter =appParameters.find("op");
-  if( iter == appParameters.end())
+  for (int i = 1; i < argc; i++)
   {
-    iter =appParameters.find("help");
-      if( iter == appParameters.end())
-	 std::cerr <<"No operation is requested"<<std::endl;
-    std::clog<<"VisIVOUtils Version 2.1.1 July 2th 2013 "<<std::endl<<std::endl;
-    std::cerr <<"Syntax: VisIVOUtils --op utility  [PARAMETERS] [--help]"<<std::endl;
-    std::cerr <<"valid utilities: createpath, orthoslices, genericslices, loadhistory "<<std::endl;
+    commandParametersSStream << argv[i] << " ";
+  }
+
+  ParametersParser myparser(commandParametersSStream.str());
+
+  appParameters = myparser.getParameters();
+
+  iter = appParameters.find("op");
+  if (iter == appParameters.end())
+  {
+    iter = appParameters.find("help");
+    if (iter == appParameters.end())
+      std::cerr << "No operation is requested" << std::endl;
+    std::clog << "VisIVOUtils Version 2.1.1 July 2th 2013 " << std::endl
+              << std::endl;
+    std::cerr << "Syntax: VisIVOUtils --op utility  [PARAMETERS] [--help]" << std::endl;
+    std::cerr << "valid utilities: createpath, orthoslices, genericslices, loadhistory " << std::endl;
     return EXIT_SUCCESS;
-   }
-std::stringstream sstreamOp(iter->second);
-int idOp=-1;
-
-if(sstreamOp.str()=="createpath") idOp=1;
-if(sstreamOp.str()=="orthoslices") idOp=2;
-    if(sstreamOp.str()=="genericslices") idOp=3;
-    if(sstreamOp.str()=="loadhistory") idOp=4;
-
-switch(idOp)
-{
-/*** Create Path **/
-case 1:
-{
-iter =appParameters.find("help");
-  if( iter != appParameters.end())
-  {
-  VSCreatePathUT op;
-  op.printHelp();
-  return 1;
   }
+  std::stringstream sstreamOp(iter->second);
+  int idOp = -1;
 
-VSCreatePathUT op;
-op.setParameters(appParameters);
-op.execute();
-break;
-}
-/***END Create Path OP **/
-/*** Create OrthoSlices **/
-case 2:
-{
-iter =appParameters.find("help");
-  if( iter != appParameters.end())
+  if (sstreamOp.str() == "createpath")
+    idOp = 1;
+  if (sstreamOp.str() == "orthoslices")
+    idOp = 2;
+  if (sstreamOp.str() == "genericslices")
+    idOp = 3;
+  if (sstreamOp.str() == "loadhistory")
+    idOp = 4;
+
+  switch (idOp)
   {
-  VSCreateSlicesUT op;
-  op.printHelp();
-  return 1;
-  }
-
-VSCreateSlicesUT op;
-op.setParameters(appParameters);
-op.execute();
-break;
-}
-/***END Create Slice OP **/
-/*** Create GenericSlices **/
-case 3:
-{
-iter =appParameters.find("help");
-  if( iter != appParameters.end())
+  /*** Create Path **/
+  case 1:
   {
-  VSCreateGenericSlicesUT op;
-  op.printHelp();
-  return 1;
+    iter = appParameters.find("help");
+    if (iter != appParameters.end())
+    {
+      VSCreatePathUT op;
+      op.printHelp();
+      return 1;
+    }
+
+    VSCreatePathUT op;
+    op.setParameters(appParameters);
+    op.execute();
+    break;
   }
+  /***END Create Path OP **/
+  /*** Create OrthoSlices **/
+  case 2:
+  {
+    iter = appParameters.find("help");
+    if (iter != appParameters.end())
+    {
+      VSCreateSlicesUT op;
+      op.printHelp();
+      return 1;
+    }
 
-VSCreateGenericSlicesUT op;
-op.setParameters(appParameters);
-op.execute();
-break;
-}
-case 4:
-{
-        iter =appParameters.find("help");
-        if( iter != appParameters.end())
-        {
-            VSLoadHistoryUT op;
-            op.printHelp();
-            return 1;
-        }
-        
-        VSLoadHistoryUT op;
-        op.setParameters(appParameters);
-        op.execute();
-        break;
-}        
-/***END Create Slice OP **/
-/*** Default **/
-default:
-{
+    VSCreateSlicesUT op;
+    op.setParameters(appParameters);
+    op.execute();
+    break;
+  }
+  /***END Create Slice OP **/
+  /*** Create GenericSlices **/
+  case 3:
+  {
+    iter = appParameters.find("help");
+    if (iter != appParameters.end())
+    {
+      VSCreateGenericSlicesUT op;
+      op.printHelp();
+      return 1;
+    }
 
-    std::cerr <<"No valid operation was given"<<std::endl;
-    std::cerr <<"Syntax: VisIVOUtils --op utility  [PARAMETERS] [--help]"<<std::endl;
-    std::cerr <<"An operation code is expected: createpath, orthoslices, genericslices, loadhistory"<<std::endl;
+    VSCreateGenericSlicesUT op;
+    op.setParameters(appParameters);
+    op.execute();
+    break;
+  }
+  case 4:
+  {
+    iter = appParameters.find("help");
+    if (iter != appParameters.end())
+    {
+      VSLoadHistoryUT op;
+      op.printHelp();
+      return 1;
+    }
+
+    VSLoadHistoryUT op;
+    op.setParameters(appParameters);
+    op.execute();
+    break;
+  }
+  /***END Create Slice OP **/
+  /*** Default **/
+  default:
+  {
+
+    std::cerr << "No valid operation was given" << std::endl;
+    std::cerr << "Syntax: VisIVOUtils --op utility  [PARAMETERS] [--help]" << std::endl;
+    std::cerr << "An operation code is expected: createpath, orthoslices, genericslices, loadhistory" << std::endl;
     return 1;
-
-
-}
-/*** END Default  OP **/
-}
-return EXIT_SUCCESS;
+  }
+    /*** END Default  OP **/
+  }
+  return EXIT_SUCCESS;
 }
 
 //#ifdef HAVE_CONFIG_H
 //#include <config.h>
 //#endif
-

@@ -18,7 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-
 #ifndef BINSOURCE_H
 #define BINSOURCE_H
 
@@ -29,17 +28,13 @@
 
 class BinSource : public AbstractSource
 {
-  public:
- 
+public:
   // !Read the header file and set the basic table parameters
-    int readHeader();
-    int readData();
-  private:
-    std::string m_dataType;
-    std::string m_endian;
-    
+  int readHeader();
+  int readData();
 
-
-
+private:
+  std::string m_dataType;
+  std::string m_endian;
 };
 #endif

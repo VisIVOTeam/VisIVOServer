@@ -22,63 +22,56 @@
 #define SPLOTCHPIPECAMERA_H
 #include "vtkPolyDataMapper.h"
 
-
 #include "pipe.h"
 #include "optionssetter.h"
 
 class vtkActor;
 class vtkSphereSource;
 class vtkConeSource;
-    class vtkCylinderSource;
-    class vtkCubeSource;
-    class vtkGlyph3D;
-    class vtkPoints;
-    
-    class ExtendedGlyph3D;
+class vtkCylinderSource;
+class vtkCubeSource;
+class vtkGlyph3D;
+class vtkPoints;
 
-   
-  
+class ExtendedGlyph3D;
+
 // Define a new frame type: this is going to be our main frame
-    class SplotchPipeCamera: public Pipe
+class SplotchPipeCamera : public Pipe
 {
-  public:
-    SplotchPipeCamera( VisIVOServerOptions options);
-    ~SplotchPipeCamera();
-   
-  protected:
-   
-   int createPipe();
-   int getCamera (SplotchCamera *splCamera);
-   int vtkCameraData (SplotchCamera *splCamera);
+public:
+  SplotchPipeCamera(VisIVOServerOptions options);
+  ~SplotchPipeCamera();
 
+protected:
+  int createPipe();
+  int getCamera(SplotchCamera *splCamera);
+  int vtkCameraData(SplotchCamera *splCamera);
 
+private:
+  void setGlyphs(){};
+  void setLookupTable();
+  void setAxes();
+  void setMirror();
+  void setRadius();
+  void setResolution();
+  bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField);
+  void setScaling();
 
-  private:
-    void setGlyphs (  ){};
-    void setLookupTable ( );
-    void setAxes ();
-    void setMirror ();
-    void setRadius ();
-    void setResolution ();
-    bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField  );
-    void setScaling ();
- 
-    vtkPolyDataMapper  *m_pConeMapper;
-    vtkActor           *m_pConeActor;
-    vtkPolyData       *m_polyData;
-    vtkGlyph3D *m_glyph ;
-    vtkSphereSource   *m_sphere;
-    vtkConeSource   *m_cone;
-    vtkCylinderSource   *m_cylinder;
-    vtkCubeSource   *m_cube;
-    vtkPoints *m_points;
-    
-    ExtendedGlyph3D *m_glyphFilter;
+  vtkPolyDataMapper *m_pConeMapper;
+  vtkActor *m_pConeActor;
+  vtkPolyData *m_polyData;
+  vtkGlyph3D *m_glyph;
+  vtkSphereSource *m_sphere;
+  vtkConeSource *m_cone;
+  vtkCylinderSource *m_cylinder;
+  vtkCubeSource *m_cube;
+  vtkPoints *m_points;
 
-        
-    double m_xRange[2] ,m_yRange[2] , m_zRange[2];
-    int m_mirrorEle;
-    float m_mirror[3][1000];
+  ExtendedGlyph3D *m_glyphFilter;
+
+  double m_xRange[2], m_yRange[2], m_zRange[2];
+  int m_mirrorEle;
+  float m_mirror[3][1000];
 };
 
 #endif

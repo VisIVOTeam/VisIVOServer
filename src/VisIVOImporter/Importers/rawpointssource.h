@@ -21,26 +21,21 @@
 #ifndef RAWPOINTSSOURCE_H
 #define RAWPOINTSSOURCE_H
 
-
 #include "abstractsource.h"
-
-
-
 
 class RawPointsSource : public AbstractSource
 {
-  public:
- 
+public:
   //! Read the header file and set the basic table parameters
-    int readHeader();
-    int readData();
-  private:
-    int getNumberOfScalars(std::string  filename);
-    int m_sizeofValues;  
-    std::string m_endianType;
-    std::vector<std::string> m_files;
-    
-    std::string m_dataType, m_endian;
+  int readHeader();
+  int readData();
 
+private:
+  int getNumberOfScalars(std::string filename);
+  int m_sizeofValues;
+  std::string m_endianType;
+  std::vector<std::string> m_files;
+
+  std::string m_dataType, m_endian;
 };
 #endif

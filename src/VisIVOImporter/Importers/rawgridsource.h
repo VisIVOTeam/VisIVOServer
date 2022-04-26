@@ -21,25 +21,19 @@
 #ifndef RAWGRIDSSOURCE_H
 #define RAWGRIDSSOURCE_H
 
-
 #include "abstractsource.h"
-
-
-
 
 class RawGridSource : public AbstractSource
 {
-  public:
- 
+public:
   //! Read the header file and set the basic table parameters
-    int readHeader();
-    int readData();
- 
-  private:
- 
-    std::string m_endianType;
-    std::vector<std::string> m_files;
-    
-    std::string m_dataType, m_endian;
+  int readHeader();
+  int readData();
+
+private:
+  std::string m_endianType;
+  std::vector<std::string> m_files;
+
+  std::string m_dataType, m_endian;
 };
 #endif

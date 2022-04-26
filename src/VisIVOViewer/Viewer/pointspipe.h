@@ -21,59 +21,51 @@
 #ifndef POINTSPIPE_H
 #define POINTSPIPE_H
 
-
 #include "pipe.h"
 #include "optionssetter.h"
 
 class vtkActor;
 class vtkSphereSource;
 class vtkConeSource;
-    class vtkCylinderSource;
-    class vtkCubeSource;
-    class vtkGlyph3D;
-    class vtkPoints;
-    
-    class ExtendedGlyph3D;
+class vtkCylinderSource;
+class vtkCubeSource;
+class vtkGlyph3D;
+class vtkPoints;
 
-   
-  
+class ExtendedGlyph3D;
+
 // Define a new frame type: this is going to be our main frame
-    class PointsPipe: public Pipe
+class PointsPipe : public Pipe
 {
-  public:
-    PointsPipe( VisIVOServerOptions options);
-    ~PointsPipe();
-   
-  protected:
-   
-   int createPipe();
-   void destroyAll();
-   
+public:
+  PointsPipe(VisIVOServerOptions options);
+  ~PointsPipe();
 
+protected:
+  int createPipe();
+  void destroyAll();
 
-  private:
-    void setGlyphs (  );
-    void setLookupTable ( );
-    void setRadius ();
-    void setResolution ();
-    bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField  );
-    void setScaling ();
-     
-    vtkPolyDataMapper  *m_pConeMapper;
-    vtkActor           *m_pConeActor;
-    vtkPolyData       *m_polyData;
-    vtkGlyph3D *m_glyph ;
-    vtkSphereSource   *m_sphere;
-    vtkConeSource   *m_cone;
-    vtkCylinderSource   *m_cylinder;
-    vtkCubeSource   *m_cube;
-    vtkPoints *m_points;
-    
-    ExtendedGlyph3D *m_glyphFilter;
+private:
+  void setGlyphs();
+  void setLookupTable();
+  void setRadius();
+  void setResolution();
+  bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField);
+  void setScaling();
 
-        
-    double m_xRange[2] ,m_yRange[2] , m_zRange[2];
+  vtkPolyDataMapper *m_pConeMapper;
+  vtkActor *m_pConeActor;
+  vtkPolyData *m_polyData;
+  vtkGlyph3D *m_glyph;
+  vtkSphereSource *m_sphere;
+  vtkConeSource *m_cone;
+  vtkCylinderSource *m_cylinder;
+  vtkCubeSource *m_cube;
+  vtkPoints *m_points;
 
+  ExtendedGlyph3D *m_glyphFilter;
+
+  double m_xRange[2], m_yRange[2], m_zRange[2];
 };
 
 #endif

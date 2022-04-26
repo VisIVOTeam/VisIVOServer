@@ -25,45 +25,44 @@
 #include "optionssetter.h"
 #include "visivoutils.h"
 
-   class vtkImageData;
-   class vtkVolume;
-   class vtkColorTransferFunction;
-   class vtkImageMathematics;
-   class vtkPiecewiseFunction;
-   class vtkImageCast;
-   class vtkVolumeProperty;
-  /* VTK9 migration
-   class vtkVolumeRayCastCompositeFunction;
-   class vtkVolumeRayCastMapper;
+class vtkImageData;
+class vtkVolume;
+class vtkColorTransferFunction;
+class vtkImageMathematics;
+class vtkPiecewiseFunction;
+class vtkImageCast;
+class vtkVolumeProperty;
+/* VTK9 migration
+ class vtkVolumeRayCastCompositeFunction;
+ class vtkVolumeRayCastMapper;
 */
-  class vtkFixedPointVolumeRayCastMapper;
-        
-   class VolumePipe: public Pipe
+class vtkFixedPointVolumeRayCastMapper;
+
+class VolumePipe : public Pipe
 {
 
-  public:
-    VolumePipe( VisIVOServerOptions options);
-    ~VolumePipe();
-   
-  protected:
-   
-    int createPipe();
-    bool setLookupTable();
-    double m_range[2]; 
-   void destroyAll();
-    
-    vtkColorTransferFunction *m_colorTransferFunction;
-    vtkImageData *m_imageData;
-    vtkImageMathematics *m_math;
-    vtkImageMathematics *m_math2;
-    vtkImageCast *m_charData;
-    vtkPiecewiseFunction *m_opacityTransferFunction;
-    vtkVolumeProperty *m_volumeProperty;
-    /* VTK9 migration
-    vtkVolumeRayCastCompositeFunction * m_rayCastCompositFunction ;
-    vtkVolumeRayCastMapper *m_rayCastMapper ;
-    */
-    vtkFixedPointVolumeRayCastMapper *m_rayCastMapper ;
-    vtkVolume *m_volume ;
+public:
+  VolumePipe(VisIVOServerOptions options);
+  ~VolumePipe();
+
+protected:
+  int createPipe();
+  bool setLookupTable();
+  double m_range[2];
+  void destroyAll();
+
+  vtkColorTransferFunction *m_colorTransferFunction;
+  vtkImageData *m_imageData;
+  vtkImageMathematics *m_math;
+  vtkImageMathematics *m_math2;
+  vtkImageCast *m_charData;
+  vtkPiecewiseFunction *m_opacityTransferFunction;
+  vtkVolumeProperty *m_volumeProperty;
+  /* VTK9 migration
+  vtkVolumeRayCastCompositeFunction * m_rayCastCompositFunction ;
+  vtkVolumeRayCastMapper *m_rayCastMapper ;
+  */
+  vtkFixedPointVolumeRayCastMapper *m_rayCastMapper;
+  vtkVolume *m_volume;
 };
 #endif
