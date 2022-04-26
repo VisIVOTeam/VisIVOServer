@@ -9,13 +9,6 @@
 
 class VTKSource : public AbstractSource
 {
-    std::string m_pointsFileName;
-    std::string m_pointsBinaryName;
-    unsigned long long int m_nRows;
-    int m_nCols;
-
-    std::vector<std::string> m_fieldNames;  //!column List
-
 
   public:
     int readHeader();
