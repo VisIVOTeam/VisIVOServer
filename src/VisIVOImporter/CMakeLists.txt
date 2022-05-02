@@ -8,7 +8,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(CFITSIO REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(CURL REQUIRED)
-
+find_package(VTK 9.1.0 REQUIRED COMPONENTS
+  CommonCore
+  CommonDataModel
+  IOLegacy
+  IOXML
+)
 set(IMPORTER_SOURCE
     Importers/abstractsource.cpp
     Importers/abstractsource.h
@@ -72,4 +77,12 @@ target_link_libraries(VisIVOImporter PRIVATE
     CFITSIO::CFITSIO
     HDF5::HDF5
     CURL::libcurl
+    ${VTK_LIBRARIES}
+
+)
+
+
+vtk_module_autoinit(
+    TARGETS VisIVOImporter
+    MODULES ${VTK_LIBRARIES}
 )
