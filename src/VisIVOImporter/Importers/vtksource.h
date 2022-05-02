@@ -10,13 +10,23 @@
 class VTKSource : public AbstractSource
 {
 
-  public:
-    int readHeader();
-    int readData();
-    VTKSource();
-    ~VTKSource() = default;
+  enum FileType
+  {
+    structured_points,
+    polydata,
+    structured_grid,
+    unstructured_grid,
+    rectilinear_grid
+  };
 
+public:
+  int readHeader();
+  int readData();
+  VTKSource();
+  ~VTKSource() = default;
 
+private:
+  FileType type;
 };
 
 #endif

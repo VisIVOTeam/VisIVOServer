@@ -48,62 +48,60 @@ ExtendedGlyph3D::ExtendedGlyph3D()
     this->SourceTransform = 0;
 
     // by default process active point scalars
-    this->SetInputArrayToProcess(0,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS,
+    this->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS,
                                  vtkDataSetAttributes::SCALARS);
     // by default process active point vectors
-    this->SetInputArrayToProcess(1,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS,
+    this->SetInputArrayToProcess(1, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS,
                                  vtkDataSetAttributes::VECTORS);
     // by default process active point normals
-    this->SetInputArrayToProcess(2,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS,
+    this->SetInputArrayToProcess(2, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS,
                                  vtkDataSetAttributes::NORMALS);
     // by default process active point scalars
-    this->SetInputArrayToProcess(3,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS,
+    this->SetInputArrayToProcess(3, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS,
                                  vtkDataSetAttributes::SCALARS);
-
 }
 
 //----------------------------------------------------------------------------
 ExtendedGlyph3D::~ExtendedGlyph3D()
 {
-    delete [] PointIdsName;
+    delete[] PointIdsName;
     this->SetSourceTransform(NULL);
 }
 
 //----------------------------------------------------------------------------
 unsigned long ExtendedGlyph3D::GetMTime()
 {
-    unsigned long mTime=this->Superclass::GetMTime();
+    unsigned long mTime = this->Superclass::GetMTime();
     unsigned long time;
-    if ( this->SourceTransform != NULL )
+    if (this->SourceTransform != NULL)
     {
-        time = this->SourceTransform ->GetMTime();
-        mTime = ( time > mTime ? time : mTime );
+        time = this->SourceTransform->GetMTime();
+        mTime = (time > mTime ? time : mTime);
     }
     return mTime;
 }
 
 //----------------------------------------------------------------------------
 int ExtendedGlyph3D::RequestData(
-        vtkInformation *vtkNotUsed(request),
-        vtkInformationVector **inputVector,
-        vtkInformationVector *outputVector)
+    vtkInformation *vtkNotUsed(request),
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector)
 {
     // get the info objects
-    vtkDataSet* input = vtkDataSet::GetData(inputVector[0], 0);
-    vtkPolyData* output = vtkPolyData::GetData(outputVector, 0);
+    vtkDataSet *input = vtkDataSet::GetData(inputVector[0], 0);
+    vtkPolyData *output = vtkPolyData::GetData(outputVector, 0);
 
     int requestedGhostLevel = outputVector->GetInformationObject(0)->Get(
-                vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
-    return this->Execute(input, inputVector[1], output, requestedGhostLevel)? 1 : 0;
+        vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
+    return this->Execute(input, inputVector[1], output, requestedGhostLevel) ? 1 : 0;
 }
-
 
 //----------------------------------------------------------------------------
 bool ExtendedGlyph3D::Execute(
-        vtkDataSet* input,
-        vtkInformationVector* sourceVector,
-        vtkPolyData* output,
-        int requestedGhostLevel)
+    vtkDataSet *input,
+    vtkInformationVector *sourceVector,
+    vtkPolyData *output,
+    int requestedGhostLevel)
 {
     assert(input && output);
     if (input == NULL || output == NULL)
@@ -113,22 +111,22 @@ bool ExtendedGlyph3D::Execute(
     }
 
     // this is used to respect blanking specified on uniform grids.
-    vtkUniformGrid* inputUG = vtkUniformGrid::SafeDownCast(input);
+    vtkUniformGrid *inputUG = vtkUniformGrid::SafeDownCast(input);
 
     vtkPointData *pd;
     vtkDataArray *inSScalars; // Scalars for Scaling
     vtkDataArray *inCScalars; // Scalars for Coloring
     vtkDataArray *inVectors;
-    unsigned char* inGhostLevels=0;
+    unsigned char *inGhostLevels = 0;
     vtkDataArray *inNormals, *sourceNormals = NULL;
     vtkDataArray *sourceTCoords = NULL;
     vtkIdType numPts, numSourcePts, numSourceCells, inPtId, i;
     vtkPoints *sourcePts = NULL;
     vtkSmartPointer<vtkPoints> transformedSourcePts = vtkSmartPointer<vtkPoints>::New();
     vtkPoints *newPts;
-    vtkDataArray *newScalars=NULL;
-    vtkDataArray *newVectors=NULL;
-    vtkDataArray *newNormals=NULL;
+    vtkDataArray *newScalars = NULL;
+    vtkDataArray *newVectors = NULL;
+    vtkDataArray *newNormals = NULL;
     vtkDataArray *newTCoords = NULL;
     double x[3], v[3], vNew[3], s = 0.0, vMag = 0.0, value, tc[3];
     vtkTransform *trans = vtkTransform::New();
@@ -138,19 +136,19 @@ bool ExtendedGlyph3D::Execute(
     vtkIdList *pts;
     vtkIdType ptIncr, cellIncr, cellId;
     int haveVectors, haveNormals, haveTCoords = 0;
-    double scalex,scaley,scalez, den;
-    vtkPointData* outputPD = output->GetPointData();
-    vtkCellData* outputCD = output->GetCellData();
+    double scalex, scaley, scalez, den;
+    vtkPointData *outputPD = output->GetPointData();
+    vtkCellData *outputCD = output->GetCellData();
     int numberOfSources = this->GetNumberOfInputConnections(1);
     vtkPolyData *defaultSource = NULL;
-    vtkIdTypeArray *pointIds=0;
+    vtkIdTypeArray *pointIds = 0;
     vtkPolyData *source = this->GetSource(0, sourceVector);
     vtkNew<vtkIdList> srcPointIdList;
     vtkNew<vtkIdList> dstPointIdList;
     vtkNew<vtkIdList> srcCellIdList;
     vtkNew<vtkIdList> dstCellIdList;
 
-    vtkDebugMacro(<<"Generating glyphs");
+    vtkDebugMacro(<< "Generating glyphs");
 
     pts = vtkIdList::New();
     pts->Allocate(VTK_CELL_SIZE);
@@ -165,26 +163,24 @@ bool ExtendedGlyph3D::Execute(
         inCScalars = inSScalars;
     }
 
-    vtkDataArray* temp = 0;
+    vtkDataArray *temp = 0;
     if (pd)
     {
         temp = pd->GetArray("vtkGhostLevels");
     }
-    if ( (!temp) || (temp->GetDataType() != VTK_UNSIGNED_CHAR)
-         || (temp->GetNumberOfComponents() != 1))
+    if ((!temp) || (temp->GetDataType() != VTK_UNSIGNED_CHAR) || (temp->GetNumberOfComponents() != 1))
     {
         vtkDebugMacro("No appropriate ghost levels field available.");
     }
     else
     {
-        inGhostLevels =static_cast<vtkUnsignedCharArray *>(temp)->GetPointer(0);
+        inGhostLevels = static_cast<vtkUnsignedCharArray *>(temp)->GetPointer(0);
     }
-
 
     numPts = input->GetNumberOfPoints();
     if (numPts < 1)
     {
-        vtkDebugMacro(<<"No points to glyph!");
+        vtkDebugMacro(<< "No points to glyph!");
         pts->Delete();
         trans->Delete();
         return true;
@@ -192,13 +188,13 @@ bool ExtendedGlyph3D::Execute(
 
     // Check input for consistency
     //
-    if ( (den = this->Range[1] - this->Range[0]) == 0.0 )
+    if ((den = this->Range[1] - this->Range[0]) == 0.0)
     {
         den = 1.0;
     }
-    if ( this->VectorMode != VTK_VECTOR_ROTATION_OFF &&
-         ((this->VectorMode == VTK_USE_VECTOR && inVectors != NULL) ||
-          (this->VectorMode == VTK_USE_NORMAL && inNormals != NULL)) )
+    if (this->VectorMode != VTK_VECTOR_ROTATION_OFF &&
+        ((this->VectorMode == VTK_USE_VECTOR && inVectors != NULL) ||
+         (this->VectorMode == VTK_USE_NORMAL && inNormals != NULL)))
     {
         haveVectors = 1;
     }
@@ -207,21 +203,21 @@ bool ExtendedGlyph3D::Execute(
         haveVectors = 0;
     }
 
-    if ( (this->IndexMode == VTK_INDEXING_BY_SCALAR && !inSScalars) ||
-         (this->IndexMode == VTK_INDEXING_BY_VECTOR &&
-          ((!inVectors && this->VectorMode == VTK_USE_VECTOR) ||
-           (!inNormals && this->VectorMode == VTK_USE_NORMAL))) )
+    if ((this->IndexMode == VTK_INDEXING_BY_SCALAR && !inSScalars) ||
+        (this->IndexMode == VTK_INDEXING_BY_VECTOR &&
+         ((!inVectors && this->VectorMode == VTK_USE_VECTOR) ||
+          (!inNormals && this->VectorMode == VTK_USE_NORMAL))))
     {
-        if ( !source )
+        if (!source)
         {
-            vtkErrorMacro(<<"Indexing on but don't have data to index with");
+            vtkErrorMacro(<< "Indexing on but don't have data to index with");
             pts->Delete();
             trans->Delete();
             return true;
         }
         else
         {
-            vtkWarningMacro(<<"Turning indexing off: no data to index with");
+            vtkWarningMacro(<< "Turning indexing off: no data to index with");
             this->IndexMode = VTK_INDEXING_OFF;
         }
     }
@@ -252,14 +248,14 @@ bool ExtendedGlyph3D::Execute(
         source = defaultSource;
     }
 
-    if ( this->IndexMode != VTK_INDEXING_OFF )
+    if (this->IndexMode != VTK_INDEXING_OFF)
     {
         pd = NULL;
         haveNormals = 1;
-        for (numSourcePts=numSourceCells=i=0; i < numberOfSources; i++)
+        for (numSourcePts = numSourceCells = i = 0; i < numberOfSources; i++)
         {
             source = this->GetSource(i, sourceVector);
-            if ( source != NULL )
+            if (source != NULL)
             {
                 if (source->GetNumberOfPoints() > numSourcePts)
                 {
@@ -269,7 +265,7 @@ bool ExtendedGlyph3D::Execute(
                 {
                     numSourceCells = source->GetNumberOfCells();
                 }
-                if ( !(sourceNormals = source->GetPointData()->GetNormals()) )
+                if (!(sourceNormals = source->GetPointData()->GetNormals()))
                 {
                     haveNormals = 0;
                 }
@@ -283,7 +279,7 @@ bool ExtendedGlyph3D::Execute(
         numSourceCells = source->GetNumberOfCells();
 
         sourceNormals = source->GetPointData()->GetNormals();
-        if ( sourceNormals )
+        if (sourceNormals)
         {
             haveNormals = 1;
         }
@@ -304,10 +300,10 @@ bool ExtendedGlyph3D::Execute(
 
         // Prepare to copy output.
         pd = input->GetPointData();
-        outputPD->CopyAllocate(pd,numPts*numSourcePts);
+        outputPD->CopyAllocate(pd, numPts * numSourcePts);
         if (this->FillCellData)
         {
-            outputCD->CopyAllocate(pd,numPts*numSourceCells);
+            outputCD->CopyAllocate(pd, numPts * numSourceCells);
         }
     }
 
@@ -317,50 +313,50 @@ bool ExtendedGlyph3D::Execute(
     dstCellIdList->SetNumberOfIds(numSourceCells);
 
     newPts = vtkPoints::New();
-    newPts->Allocate(numPts*numSourcePts);
-    if ( this->GeneratePointIds )
+    newPts->Allocate(numPts * numSourcePts);
+    if (this->GeneratePointIds)
     {
         pointIds = vtkIdTypeArray::New();
         pointIds->SetName(this->PointIdsName);
-        pointIds->Allocate(numPts*numSourcePts);
+        pointIds->Allocate(numPts * numSourcePts);
         outputPD->AddArray(pointIds);
         pointIds->Delete();
     }
-    if ( this->ColorMode == VTK_COLOR_BY_SCALAR && inCScalars )
+    if (this->ColorMode == VTK_COLOR_BY_SCALAR && inCScalars)
     {
         newScalars = inCScalars->NewInstance();
         newScalars->SetNumberOfComponents(inCScalars->GetNumberOfComponents());
-        newScalars->Allocate(inCScalars->GetNumberOfComponents()*numPts*numSourcePts);
+        newScalars->Allocate(inCScalars->GetNumberOfComponents() * numPts * numSourcePts);
         newScalars->SetName(inCScalars->GetName());
     }
-    else if ( (this->ColorMode == VTK_COLOR_BY_SCALE) && inSScalars)
+    else if ((this->ColorMode == VTK_COLOR_BY_SCALE) && inSScalars)
     {
         newScalars = vtkFloatArray::New();
-        newScalars->Allocate(numPts*numSourcePts);
+        newScalars->Allocate(numPts * numSourcePts);
         newScalars->SetName("GlyphScale");
         if (this->ScaleMode == VTK_SCALE_BY_SCALAR)
         {
             newScalars->SetName(inSScalars->GetName());
         }
     }
-    else if ( (this->ColorMode == VTK_COLOR_BY_VECTOR) && haveVectors)
+    else if ((this->ColorMode == VTK_COLOR_BY_VECTOR) && haveVectors)
     {
         newScalars = vtkFloatArray::New();
-        newScalars->Allocate(numPts*numSourcePts);
+        newScalars->Allocate(numPts * numSourcePts);
         newScalars->SetName("VectorMagnitude");
     }
-    if ( haveVectors )
+    if (haveVectors)
     {
         newVectors = vtkFloatArray::New();
         newVectors->SetNumberOfComponents(3);
-        newVectors->Allocate(3*numPts*numSourcePts);
+        newVectors->Allocate(3 * numPts * numSourcePts);
         newVectors->SetName("GlyphVector");
     }
-    if ( haveNormals )
+    if (haveNormals)
     {
         newNormals = vtkFloatArray::New();
         newNormals->SetNumberOfComponents(3);
-        newNormals->Allocate(3*numPts*numSourcePts);
+        newNormals->Allocate(3 * numPts * numSourcePts);
         newNormals->SetName("Normals");
     }
     if (haveTCoords)
@@ -368,19 +364,19 @@ bool ExtendedGlyph3D::Execute(
         newTCoords = vtkFloatArray::New();
         int numComps = sourceTCoords->GetNumberOfComponents();
         newTCoords->SetNumberOfComponents(numComps);
-        newTCoords->Allocate(numComps*numPts*numSourcePts);
+        newTCoords->Allocate(numComps * numPts * numSourcePts);
         newTCoords->SetName("TCoords");
     }
 
     // Setting up for calls to PolyData::InsertNextCell()
-    if (this->IndexMode != VTK_INDEXING_OFF )
+    if (this->IndexMode != VTK_INDEXING_OFF)
     {
-        output->Allocate(3*numPts*numSourceCells,numPts*numSourceCells);
+        output->Allocate(3 * numPts * numSourceCells, numPts * numSourceCells);
     }
     else
     {
         output->Allocate(source,
-                         3*numPts*numSourceCells, numPts*numSourceCells);
+                         3 * numPts * numSourceCells, numPts * numSourceCells);
     }
 
     transformedSourcePts->SetDataTypeToDouble();
@@ -389,14 +385,14 @@ bool ExtendedGlyph3D::Execute(
     // Traverse all Input points, transforming Source points and copying
     // point attributes.
     //
-    ptIncr=0;
-    cellIncr=0;
-    for (inPtId=0; inPtId < numPts; inPtId++)
+    ptIncr = 0;
+    cellIncr = 0;
+    for (inPtId = 0; inPtId < numPts; inPtId++)
     {
         scalex = scaley = scalez = 1.0;
-        if ( ! (inPtId % 10000) )
+        if (!(inPtId % 10000))
         {
-            this->UpdateProgress(static_cast<double>(inPtId)/numPts);
+            this->UpdateProgress(static_cast<double>(inPtId) / numPts);
             if (this->GetAbortExecute())
             {
                 break;
@@ -404,29 +400,29 @@ bool ExtendedGlyph3D::Execute(
         }
 
         // Get the scalar and vector data
-        if ( inSScalars )
+        if (inSScalars)
         {
             s = inSScalars->GetComponent(inPtId, 0);
-            if ( this->ScaleMode == VTK_SCALE_BY_SCALAR ||
-                 this->ScaleMode == VTK_DATA_SCALING_OFF )
+            if (this->ScaleMode == VTK_SCALE_BY_SCALAR ||
+                this->ScaleMode == VTK_DATA_SCALING_OFF)
             {
                 scalex = scaley = scalez = s;
             }
         }
 
-        if ( haveVectors )
+        if (haveVectors)
         {
-            vtkDataArray *array3D = this->VectorMode == VTK_USE_NORMAL? inNormals : inVectors;
-            if(array3D->GetNumberOfComponents()>3)
+            vtkDataArray *array3D = this->VectorMode == VTK_USE_NORMAL ? inNormals : inVectors;
+            if (array3D->GetNumberOfComponents() > 3)
             {
-                vtkErrorMacro(<<"vtkDataArray "<<array3D->GetName()<<" has more than 3 components.\n");
+                vtkErrorMacro(<< "vtkDataArray " << array3D->GetName() << " has more than 3 components.\n");
                 pts->Delete();
                 trans->Delete();
-                if(newPts)
+                if (newPts)
                 {
                     newPts->Delete();
                 }
-                if(newVectors)
+                if (newVectors)
                 {
                     newVectors->Delete();
                 }
@@ -438,36 +434,33 @@ bool ExtendedGlyph3D::Execute(
             v[2] = 0;
             array3D->GetTuple(inPtId, v);
             vMag = vtkMath::Norm(v);
-            if ( this->ScaleMode == VTK_SCALE_BY_VECTORCOMPONENTS )
+            if (this->ScaleMode == VTK_SCALE_BY_VECTORCOMPONENTS)
             {
                 scalex = v[0];
                 scaley = v[1];
                 scalez = v[2];
             }
-            else if ( this->ScaleMode == VTK_SCALE_BY_VECTOR )
+            else if (this->ScaleMode == VTK_SCALE_BY_VECTOR)
             {
                 scalex = scaley = scalez = vMag;
             }
         }
 
         // Clamp data scale if enabled
-        if ( this->Clamping )
+        if (this->Clamping)
         {
-            scalex = (scalex < this->Range[0] ? this->Range[0] :
-                    (scalex > this->Range[1] ? this->Range[1] : scalex));
+            scalex = (scalex < this->Range[0] ? this->Range[0] : (scalex > this->Range[1] ? this->Range[1] : scalex));
             scalex = (scalex - this->Range[0]) / den;
-            scaley = (scaley < this->Range[0] ? this->Range[0] :
-                    (scaley > this->Range[1] ? this->Range[1] : scaley));
+            scaley = (scaley < this->Range[0] ? this->Range[0] : (scaley > this->Range[1] ? this->Range[1] : scaley));
             scaley = (scaley - this->Range[0]) / den;
-            scalez = (scalez < this->Range[0] ? this->Range[0] :
-                    (scalez > this->Range[1] ? this->Range[1] : scalez));
+            scalez = (scalez < this->Range[0] ? this->Range[0] : (scalez > this->Range[1] ? this->Range[1] : scalez));
             scalez = (scalez - this->Range[0]) / den;
         }
 
         // Compute index into table of glyphs
-        if ( this->IndexMode != VTK_INDEXING_OFF )
+        if (this->IndexMode != VTK_INDEXING_OFF)
         {
-            if ( this->IndexMode == VTK_INDEXING_BY_SCALAR )
+            if (this->IndexMode == VTK_INDEXING_BY_SCALAR)
             {
                 value = s;
             }
@@ -476,12 +469,11 @@ bool ExtendedGlyph3D::Execute(
                 value = vMag;
             }
 
-            int index = static_cast<int>((value - this->Range[0])*numberOfSources / den);
-            index = (index < 0 ? 0 :
-                                 (index >= numberOfSources ? (numberOfSources-1) : index));
+            int index = static_cast<int>((value - this->Range[0]) * numberOfSources / den);
+            index = (index < 0 ? 0 : (index >= numberOfSources ? (numberOfSources - 1) : index));
 
             source = this->GetSource(index, sourceVector);
-            if ( source != NULL )
+            if (source != NULL)
             {
                 sourcePts = source->GetPoints();
                 sourceNormals = source->GetPointData()->GetNormals();
@@ -491,7 +483,7 @@ bool ExtendedGlyph3D::Execute(
         }
 
         // Make sure we're not indexing into empty glyph
-        if ( !source )
+        if (!source)
         {
             continue;
         }
@@ -525,12 +517,12 @@ bool ExtendedGlyph3D::Execute(
         trans->Identity();
 
         // Copy all topology (transformation independent)
-        for (cellId=0; cellId < numSourceCells; cellId++)
+        for (cellId = 0; cellId < numSourceCells; cellId++)
         {
             source->GetCellPoints(cellId, pointIdList.GetPointer());
             cellPts = pointIdList.GetPointer();
             npts = cellPts->GetNumberOfIds();
-            for (pts->Reset(), i=0; i < npts; i++)
+            for (pts->Reset(), i = 0; i < npts; i++)
             {
                 pts->InsertId(i, cellPts->GetId(i) + ptIncr);
             }
@@ -541,29 +533,29 @@ bool ExtendedGlyph3D::Execute(
         input->GetPoint(inPtId, x);
         trans->Translate(x[0], x[1], x[2]);
 
-        if ( haveVectors )
+        if (haveVectors)
         {
             // Copy Input vector
-            for (i=0; i < numSourcePts; i++)
+            for (i = 0; i < numSourcePts; i++)
             {
-                newVectors->InsertTuple(i+ptIncr, v);
+                newVectors->InsertTuple(i + ptIncr, v);
             }
             if (this->Orient && (vMag > 0.0))
             {
                 // if there is no y or z component
-                if ( v[1] == 0.0 && v[2] == 0.0 )
+                if (v[1] == 0.0 && v[2] == 0.0)
                 {
-                    if (v[0] < 0) //just flip x if we need to
+                    if (v[0] < 0) // just flip x if we need to
                     {
-                        trans->RotateWXYZ(180.0,0,1,0);
+                        trans->RotateWXYZ(180.0, 0, 1, 0);
                     }
                 }
                 else
                 {
-                    vNew[0] = (v[0]+vMag) / 2.0;
+                    vNew[0] = (v[0] + vMag) / 2.0;
                     vNew[1] = v[1] / 2.0;
                     vNew[2] = v[2] / 2.0;
-                    trans->RotateWXYZ(180.0,vNew[0],vNew[1],vNew[2]);
+                    trans->RotateWXYZ(180.0, vNew[0], vNew[1], vNew[2]);
                 }
             }
         }
@@ -573,7 +565,7 @@ bool ExtendedGlyph3D::Execute(
             for (i = 0; i < numSourcePts; i++)
             {
                 sourceTCoords->GetTuple(i, tc);
-                newTCoords->InsertTuple(i+ptIncr, tc);
+                newTCoords->InsertTuple(i + ptIncr, tc);
             }
         }
 
@@ -581,30 +573,30 @@ bool ExtendedGlyph3D::Execute(
         // Copy scalar value
         if (inSScalars && (this->ColorMode == VTK_COLOR_BY_SCALE))
         {
-            for (i=0; i < numSourcePts; i++)
+            for (i = 0; i < numSourcePts; i++)
             {
-                newScalars->InsertTuple(i+ptIncr, &scalex); // = scaley = scalez
+                newScalars->InsertTuple(i + ptIncr, &scalex); // = scaley = scalez
             }
         }
         else if (inCScalars && (this->ColorMode == VTK_COLOR_BY_SCALAR))
         {
-            for (i=0; i < numSourcePts; i++)
+            for (i = 0; i < numSourcePts; i++)
             {
-                outputPD->CopyTuple(inCScalars, newScalars, inPtId, ptIncr+i);
+                outputPD->CopyTuple(inCScalars, newScalars, inPtId, ptIncr + i);
             }
         }
         if (haveVectors && this->ColorMode == VTK_COLOR_BY_VECTOR)
         {
-            for (i=0; i < numSourcePts; i++)
+            for (i = 0; i < numSourcePts; i++)
             {
-                newScalars->InsertTuple(i+ptIncr, &vMag);
+                newScalars->InsertTuple(i + ptIncr, &vMag);
             }
         }
 
         // scale data if appropriate
-        if ( this->Scaling )
+        if (this->Scaling)
         {
-            if ( this->ScaleMode == VTK_DATA_SCALING_OFF )
+            if (this->ScaleMode == VTK_DATA_SCALING_OFF)
             {
                 scalex = scaley = scalez = this->ScaleFactor;
             }
@@ -615,19 +607,19 @@ bool ExtendedGlyph3D::Execute(
                 scalez *= this->ScaleFactor;
             }
 
-            if ( scalex == 0.0 )
+            if (scalex == 0.0)
             {
                 scalex = 1.0e-10;
             }
-            if ( scaley == 0.0 )
+            if (scaley == 0.0)
             {
                 scaley = 1.0e-10;
             }
-            if ( scalez == 0.0 )
+            if (scalez == 0.0)
             {
                 scalez = 1.0e-10;
             }
-            trans->Scale(scalex,scaley,scalez);
+            trans->Scale(scalex, scaley, scalez);
         }
 
         // multiply points and normals by resulting matrix
@@ -639,16 +631,16 @@ bool ExtendedGlyph3D::Execute(
         }
         else
         {
-            trans->TransformPoints(sourcePts,newPts);
+            trans->TransformPoints(sourcePts, newPts);
         }
 
-        if ( haveNormals )
+        if (haveNormals)
         {
-            trans->TransformNormals(sourceNormals,newNormals);
+            trans->TransformNormals(sourceNormals, newNormals);
         }
 
         // Copy point data from source (if possible)
-        if ( pd )
+        if (pd)
         {
             for (i = 0; i < numSourcePts; ++i)
             {
@@ -670,9 +662,9 @@ bool ExtendedGlyph3D::Execute(
         }
 
         // If point ids are to be generated, do it here
-        if ( this->GeneratePointIds )
+        if (this->GeneratePointIds)
         {
-            for (i=0; i < numSourcePts; i++)
+            for (i = 0; i < numSourcePts; i++)
             {
                 pointIds->InsertNextValue(inPtId);
             }
@@ -721,7 +713,7 @@ bool ExtendedGlyph3D::Execute(
 
 //----------------------------------------------------------------------------
 // Specify a source object at a specified table location.
-void ExtendedGlyph3D::SetSourceConnection(int id, vtkAlgorithmOutput* algOutput)
+void ExtendedGlyph3D::SetSourceConnection(int id, vtkAlgorithmOutput *algOutput)
 {
     if (id < 0)
     {
@@ -741,7 +733,8 @@ void ExtendedGlyph3D::SetSourceConnection(int id, vtkAlgorithmOutput* algOutput)
     else if (algOutput)
     {
         vtkWarningMacro("The source id provided is larger than the maximum "
-                        "source id, using " << numConnections << " instead.");
+                        "source id, using "
+                        << numConnections << " instead.");
         this->AddInputConnection(1, algOutput);
     }
 }
@@ -758,7 +751,7 @@ void ExtendedGlyph3D::SetSourceData(int id, vtkPolyData *pd)
         return;
     }
 
-    vtkTrivialProducer* tp = 0;
+    vtkTrivialProducer *tp = 0;
     if (pd)
     {
         tp = vtkTrivialProducer::New();
@@ -791,13 +784,13 @@ void ExtendedGlyph3D::SetSourceData(int id, vtkPolyData *pd)
 // Get a pointer to a source object at a specified table location.
 vtkPolyData *ExtendedGlyph3D::GetSource(int id)
 {
-    if ( id < 0 || id >= this->GetNumberOfInputConnections(1) )
+    if (id < 0 || id >= this->GetNumberOfInputConnections(1))
     {
         return NULL;
     }
 
     return vtkPolyData::SafeDownCast(
-                this->GetExecutive()->GetInputData(1, id));
+        this->GetExecutive()->GetInputData(1, id));
 }
 /*
 //----------------------------------------------------------------------------
@@ -880,9 +873,9 @@ void ExtendedGlyph3D::PrintSelf(ostream& os, vtkIndent indent)
 }
 */
 int ExtendedGlyph3D::RequestUpdateExtent(
-        vtkInformation *vtkNotUsed(request),
-        vtkInformationVector **inputVector,
-        vtkInformationVector *outputVector)
+    vtkInformation *vtkNotUsed(request),
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector)
 {
     // get the info objects
     vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
@@ -910,7 +903,7 @@ int ExtendedGlyph3D::RequestUpdateExtent(
 }
 
 //----------------------------------------------------------------------------
-vtkPolyData* ExtendedGlyph3D::GetSource(int idx, vtkInformationVector *sourceInfo)
+vtkPolyData *ExtendedGlyph3D::GetSource(int idx, vtkInformationVector *sourceInfo)
 {
     vtkInformation *info = sourceInfo->GetInformationObject(idx);
     if (!info)
@@ -938,18 +931,17 @@ int ExtendedGlyph3D::FillInputPortInformation(int port, vtkInformation *info)
     return 0;
 }
 
-void ExtendedGlyph3D::PrintSelf(ostream& os, vtkIndent indent)
+void ExtendedGlyph3D::PrintSelf(ostream &os, vtkIndent indent)
 {
     // this->Superclass::PrintSelf(os, indent);
 }
 
-void ExtendedGlyph3D::PrintHeader(ostream& os, vtkIndent indent)
+void ExtendedGlyph3D::PrintHeader(ostream &os, vtkIndent indent)
 {
     // this->Superclass::PrintHeader(os, indent);
-
 }
 
-void ExtendedGlyph3D::PrintTrailer(std::ostream& os , vtkIndent indent)
+void ExtendedGlyph3D::PrintTrailer(std::ostream &os, vtkIndent indent)
 {
     // this->Superclass::PrintTrailer(os, indent);
 }
