@@ -39,6 +39,9 @@ set(IMPORTER_SOURCE
     Importers/rawpointssource.h
     Importers/vosourcenew.cpp
     Importers/vosourcenew.h
+    Importers/vtksource.cpp
+    Importers/vtksource.h
+
 )
 
 set(UTILS_SOURCE
