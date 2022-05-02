@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include "vstable.h"
-#include "VisIVOFiltersConfigure.h"
+// #include "VisIVOFiltersConfigure.h"
 #include "visivoutils.h"
 #include <cstdlib>
 #include <cstring>
