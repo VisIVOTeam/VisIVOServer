@@ -55,6 +55,7 @@ int VTKSource::readHeader()
 }
 
 // https://stackoverflow.com/questions/11727822/reading-a-vtk-file-with-python
+//https://docs.paraview.org/en/latest/UsersGuide/understandingData.html
 
 //---------------------------------------------------------------------
 int VTKSource::readData()
@@ -148,10 +149,59 @@ int VTKSource::readData()
         vtkRectilinearGrid *data = reader->GetOutput();
         int dim[3] = {0};
         data->GetDimensions(dim);
-        std::cout << dim[0] << " " << dim[1] << " " << dim[2] << std::endl;
         std::cout << data[0] << std::endl;
-        std::cout << data->GetNumberOfPoints() << std::endl;
-        std::cout << data->GetNumberOfCells() << std::endl;
+        std::cout <<"DIM: "<< dim[0] << " " << dim[1] << " " << dim[2] << std::endl;
+
+        std::cout <<"#points:"<< data->GetNumberOfPoints() <<" #cells:" << data->GetNumberOfCells() << std::endl;
+        
+        vtkPointData* points = data->GetPointData();
+        
+        cout << "POINT_DATA:\n";
+        if (points) {
+            std::cout << " contains point data with " << points->GetNumberOfArrays() << " arrays." << std::endl;
+            for (int i = 0; i < points->GetNumberOfArrays(); i++) {
+                std::cout << "\tArray " << i << " is named " << (points->GetArrayName(i) ? points->GetArrayName(i) : "NULL") << std::endl;
+            }
+            
+            for(int i=0; vtkDataArray* a = points->GetArray(i); i++ ) {
+                int size = a->GetNumberOfTuples();
+                int comp = a->GetNumberOfComponents();
+                cout << " data array " << size << " " << comp << endl;
+                
+                for (int j=0; j<size; j++) {
+                    cout << "pnt:";
+                    for (int k=0; k<comp; k++) cout << " " << a->GetComponent(j, k);
+                    cout << endl;
+                }
+            }
+        }
+
+        cout << "CELL_DATA:\n";
+        // Now check for cell data
+        vtkCellData *cd = data->GetCellData();
+        if (cd)
+        {
+            std::cout << " contains cell data with " << cd->GetNumberOfArrays() << " arrays."
+            << std::endl;
+            for (int i = 0; i < cd->GetNumberOfArrays(); i++)
+            {
+                std::cout << "\tArray " << i << " is named "
+                << (cd->GetArrayName(i) ? cd->GetArrayName(i) : "NULL") << std::endl;
+            }
+        }
+        
+        cout << "FIELD_DATA:\n";
+        // Now check for field data
+        if (data->GetFieldData())
+        {
+            std::cout << " contains field data with " << data->GetFieldData()->GetNumberOfArrays()
+            << " arrays." << std::endl;
+            for (int i = 0; i < data->GetFieldData()->GetNumberOfArrays(); i++)
+            {
+                std::cout << "\tArray " << i << " is named "
+                << data->GetFieldData()->GetArray(i)->GetName() << std::endl;
+            }
+        }
     }
     
     
