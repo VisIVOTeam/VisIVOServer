@@ -8,10 +8,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(CFITSIO REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(CURL REQUIRED)
-
+find_package(MPI REQUIRED)
 set(IMPORTER_SOURCE
     Importers/abstractsource.cpp
     Importers/abstractsource.h
+    Importers/abstractreader.cpp
+    Importers/abstractreader.h
     Importers/asciisource.cpp
     Importers/asciisource.h
     Importers/binsource.cpp
@@ -29,6 +31,8 @@ set(IMPORTER_SOURCE
     Importers/hdf5source.cpp
     Importers/hdf5source.h
     Importers/mainImporter.cpp
+    Importers/mpigadgetreader.cpp
+    Importers/mpigadgetreader.h
     Importers/muportalsource.cpp
     Importers/muportalsource.h
     Importers/ramsessource.cpp
@@ -37,6 +41,8 @@ set(IMPORTER_SOURCE
     Importers/rawgridsource.h
     Importers/rawpointssource.cpp
     Importers/rawpointssource.h
+    Importers/serialgadgetreader.cpp
+    Importers/serialgadgetreader.h
     Importers/vosourcenew.cpp
     Importers/vosourcenew.h
 )
@@ -71,4 +77,5 @@ target_link_libraries(VisIVOImporter PRIVATE
     CFITSIO::CFITSIO
     HDF5::HDF5
     CURL::libcurl
+    ${MPI_C_LIBRARIES}
 )

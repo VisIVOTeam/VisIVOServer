@@ -19,15 +19,30 @@
  ***************************************************************************/
 //#include "VisIVOImporterConfigure.h"
 #include "gadgetsource.h"
+#include "mpigadgetreader.h"
+#include "serialgadgetreader.h"
 
 #include "visivoutils.h"
+#include "mpi.h"
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <cstring>
+#include <vector>
 #include <cmath>
+#include <algorithm>
+#include <unordered_map>
+#include <filesystem>
+
+bool isNumeric(std::string const &str)
+{
+  auto it = str.begin();
+  while (it != str.end() && std::isdigit(*it)) {
+    it++;
+  }
+  return !str.empty() && it == str.end();
+}
 
 //---------------------------------------------------------------------
 int GadgetSource::readHeader()
@@ -36,8 +51,10 @@ int GadgetSource::readHeader()
 {
   char dummy[4]; 
 //   char checkType[4];
+  MPI_Init(NULL, NULL);
   int type=0; unsigned int Npart=0;
   std::string systemEndianism;
+  numBlock=0;
   bool needSwap=false;
 #ifdef VSBIGENDIAN
   systemEndianism="big";
@@ -49,99 +66,122 @@ int GadgetSource::readHeader()
   if((m_endian=="l" || m_endian=="little") && systemEndianism=="big")
     needSwap=true;
 	
+  std::string fileName = m_pointsFileName.c_str();
   std::ifstream inFile;
-  inFile.open(m_pointsFileName.c_str(), std::ios::binary);
-  
+
+  inFile.open(fileName, std::ios::binary);
   if (!inFile)
   {
-    std::cerr<<"Error while opening block"<<std::endl;
+    std::cerr<<"Error while opening File"<<std::endl;
     return -1;
   }
-
-	 
   inFile.read((char *)(dummy), 4*sizeof(char)); //!*** IMPORTANT NOT REMOVE ***//
   inFile.read((char *)(tmpType), 4*sizeof(char));   //!*** IMPORTANT NOT REMOVE ***//
-  
+
   tagType=tmpType;
-  
   checkType.push_back(tagType);
-  
-  
   if (iCompare (checkType[0].c_str(), "HEAD") == 0)  //!read header Type2 else Type1
   {
+    headerType2 curHead;
+    //std::clog<<"Header1"<<std::endl;
     inFile.seekg(4, std::ios::beg);
-    inFile.read((char *)(&m_pHeaderType2), 296);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
+    
+    inFile.read((char *)(&curHead), 304);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
     m_snapformat = 2;
-     
     if (needSwap)
       swapHeaderType2();
-     
-    for (type=0; type<6; type++)
-    {
-      Npart=Npart + m_pHeaderType2.npart[type];
-// 	     std::clog<<"Npart="<<Npart<<std::endl;
+    
+    int nFiles = curHead.num_files[0];
+    if(nFiles > 1){
+      fileName = m_pointsFileName.c_str();
+      std::filesystem::path p(fileName);
+      if(p.extension().generic_string().size() > 0 && isNumeric(p.extension().generic_string().substr(1))){
+        for(int j = 0; j < p.extension().generic_string().substr(1).size(); j++){
+          fileName.pop_back();
+        }
+        
+        if(checkMultipleFiles(nFiles, fileName)){
+          numFiles = nFiles;
+          if (readMultipleHeaders(nFiles, fileName, needSwap) == 0){
+            
+            inFile.close();
+            MPI_Finalize();
+            return -1;
+          }
+          else return 0;
+        }
+        else {
+          inFile.close();         
+          MPI_Finalize();
+          return -1;
+        }
+      } 
+      else{
+        inFile.close();
+        std::cerr << "Expecting multiple files" << std::endl;
+      }
     }
-     
-    if (m_pHeaderType2.sizeFirstBlock[0] != (3*Npart*sizeof(float)))
-    {
-      std::cerr<<"The size File is not than expected"<<std::endl;
-      return -1;
-    }
+    m_pHeaderType2.push_back(curHead);
+    numFiles = 1;
   }
   else  //Type1 
   {
     inFile.seekg(0, std::ios::beg);	
-    inFile.read((char *)(&m_pHeaderType1), 268);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
+    inFile.read((char *)(&m_pHeaderType1), 268);
     m_snapformat = 1;
-     
+    
     if (needSwap)
       swapHeaderType1();
-     
-    for (type=0; type<6; type++)
-    {
-      Npart=Npart + m_pHeaderType1.npart[type];
-// 	     std::clog<<"Npart="<<Npart<<std::endl;
-    }
-     
+    
     if (m_pHeaderType1.sizeFirstBlock[0] != (3*Npart*sizeof(float)))
     {
       std::cerr<<"The size File is not than expected"<<std::endl;
       return -1;
     }
+      
   }
-  
-  inFile.seekg(280, std::ios::beg);  //!** BEGINNING BLOCK POS **//
-  
-  numBlock=0;
-   
-  while (inFile.peek() != EOF) //!it is (probably ??) a check control!
-  {
-    inFile.seekg (8, std::ios::cur);
-    inFile.read((char *)(m_sizeBlock), sizeof(int));
-    if (needSwap)
-      m_sizeBlock[0]=intSwap((char *)(&m_sizeBlock[0]));
-    std::clog<<"m_sizeBlock:"<<m_sizeBlock[0]<<std::endl;
-
-    inFile.seekg (m_sizeBlock[0], std::ios::cur);
-// 	   inFile.seekg (4, std::ios::cur);
-    inFile.read((char *)(m_sizeBlock), sizeof(int));
-    if (needSwap)
-      m_sizeBlock[0]=intSwap((char *)(&m_sizeBlock[0]));
-    std::clog<<"m_sizeBlock_END:"<<m_sizeBlock[0]<<std::endl;
-	          
-    if(inFile.peek() != EOF)
-      numBlock++;
-  }
-   
   inFile.close();
-	
   return 0;
 }
- 
-//---------------------------------------------------------------------
+
+int GadgetSource::readMultipleHeaders(int nFiles, std::string fileName, bool needSwap)
+{
+  for(int i = 0; i < nFiles; i++){ 
+    std::ifstream inFile; 
+    headerType2 curHead;
+    inFile.open(fileName + std::to_string(i), std::ios::binary);
+    
+    inFile.seekg(4, std::ios::beg);
+    
+    inFile.read((char *)(&curHead), 304);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
+    if (needSwap)
+      swapHeaderType2();
+    m_pHeaderType2.push_back(curHead);
+
+    inFile.close();
+  }
+  return 1;
+}
+
+int GadgetSource::checkMultipleFiles(int nFiles, std::string fName){  
+  std::ifstream inFile;
+  
+  for(int i = 0; i < nFiles; i++){
+    inFile.open(fName + std::to_string(i), std::ios::binary);
+    if (!inFile)
+    {
+      std::cerr<<"Error while opening multiple files, read only input file"<<std::endl;
+      return 0;  
+    }
+    inFile.close();
+    
+  }
+  
+  return 1; 
+}
+
 int GadgetSource::readData()
-//---------------------------------------------------------------------
-{ /* START */
+{
   char dummy[4]; 
   std::string systemEndianism;
   bool needSwap=false;
@@ -155,47 +195,20 @@ int GadgetSource::readData()
   if((m_endian=="l" || m_endian=="little") && systemEndianism=="big")
     needSwap=true;
 
-  int j=0; int k=0; int type=0; int block=0;
-//   int m_sizeBlock[1]; int numBlock=-1;
-
-  std::ios::off_type pWrite=0; int pToStart=0;
-  std::ios::off_type pWriteX=0,  pWriteY=0, pWriteZ=0;
-
+  int type=0;
   unsigned int i=0;
-  unsigned long int chunk=0;  //!** Number of Information read & write for cycle **//
-  unsigned long int n=0; unsigned long int Resto=0;
 
   char tagTmp[5]="";
-	
-  unsigned int param=1; unsigned int esp=32;
-  unsigned long long int maxULI; unsigned long long int minPart;
-	
-  maxULI=ldexp((float)param, esp); minPart=maxULI;
-	
-//!   struct header pHeader;
-
   std::string tag; 
-  
 //   const char point = '.';
-  
   int idx = m_pointsBinaryName.rfind('.');
 
   std::string pathFileIn = m_pointsBinaryName.erase(idx, idx+4);
   std::string pathFileOut = pathFileIn;
-  
-  
+   
   std::string bin = ".bin";
   std::string X = "_X"; std::string Y = "_Y"; std::string Z = "_Z";
-	
-  /*=======================================================================*/
 
-  unsigned int threeDim = 0;
-  unsigned int oneDim = 0;
-  unsigned int otherBlock = 0;
-	
-  /*=======================================================================*/ 
-
-	
   /*=======================================================================*/
   /*!================== Identification TYPE & NAME BLOCK ===================*/
 
@@ -208,1124 +221,243 @@ int GadgetSource::readData()
   tagTypeForNameFile.push_back("BNDRY");
 
   std::vector<std::string> blockNamesToCompare; //!block fields names
-  blockNamesToCompare.push_back("POS");
-  blockNamesToCompare.push_back("VEL");
-  blockNamesToCompare.push_back("ID");
-  blockNamesToCompare.push_back("MASS");
-  blockNamesToCompare.push_back("U");
-  blockNamesToCompare.push_back("RHO");
-  blockNamesToCompare.push_back("HSML");
-  blockNamesToCompare.push_back("POT");
-  blockNamesToCompare.push_back("ACCE");
-  blockNamesToCompare.push_back("ENDT");
-  blockNamesToCompare.push_back("TSTP");
-		
-  std::vector<std::vector<std::string> > namesFields;
-	
-  std::vector<std::string> tmpNamesFields;
-
-  std::vector<std::string> blockNames;
-	
-  /*=======================================================================*/
-	
-  std::vector<std::string> namesFieldsType1_GAS;
-  namesFieldsType1_GAS.push_back("POS_X");
-  namesFieldsType1_GAS.push_back("POS_Y");
-  namesFieldsType1_GAS.push_back("POS_Z");
-  namesFieldsType1_GAS.push_back("VEL_X");
-  namesFieldsType1_GAS.push_back("VEL_Y");
-  namesFieldsType1_GAS.push_back("VEL_Z");
-  namesFieldsType1_GAS.push_back("ID");
-  namesFieldsType1_GAS.push_back("MASS");
-  namesFieldsType1_GAS.push_back("U");
-  namesFieldsType1_GAS.push_back("RHO");
-  namesFieldsType1_GAS.push_back("HSML");
-
-  std::vector<std::string> namesFieldsType1_Other;
-  namesFieldsType1_Other.push_back("POS_X");
-  namesFieldsType1_Other.push_back("POS_Y");
-  namesFieldsType1_Other.push_back("POS_Z");
-  namesFieldsType1_Other.push_back("VEL_X");
-  namesFieldsType1_Other.push_back("VEL_Y");
-  namesFieldsType1_Other.push_back("VEL_Z");
-  namesFieldsType1_Other.push_back("ID");
-  namesFieldsType1_Other.push_back("MASS");
+  blockNamesToCompare.push_back("POS"); //0
+  blockNamesToCompare.push_back("VEL"); //1
+  blockNamesToCompare.push_back("ID");  //2
+  blockNamesToCompare.push_back("MASS");//3
+  blockNamesToCompare.push_back("U");   //4
+  blockNamesToCompare.push_back("TEMP");//5
+  blockNamesToCompare.push_back("RHO"); //6
+  blockNamesToCompare.push_back("NE");  //7
+  blockNamesToCompare.push_back("NH");  //8
+  blockNamesToCompare.push_back("HSML");//9
+  blockNamesToCompare.push_back("SFR"); //10
+  blockNamesToCompare.push_back("AGE"); //11
+  blockNamesToCompare.push_back("Z");   //12
+  blockNamesToCompare.push_back("Zs");  //13
+  blockNamesToCompare.push_back("iM");  //14
+  blockNamesToCompare.push_back("ZAGE");//15
+  blockNamesToCompare.push_back("ZALV");//16
+  blockNamesToCompare.push_back("CLDX");//17
+  blockNamesToCompare.push_back("TSTP");//18
+  blockNamesToCompare.push_back("POT"); //19
+  blockNamesToCompare.push_back("ACCE");//20
+  blockNamesToCompare.push_back("ENDT");//21
+  //blockNamesToCompare.push_back("TSTP");//10
+  blockNamesToCompare.push_back("IDU"); //22
+  blockNamesToCompare.push_back("HOTT");//23
+  blockNamesToCompare.push_back("MHOT");//24
+  blockNamesToCompare.push_back("MCLD");//25
+  blockNamesToCompare.push_back("EHOT");//26
+  blockNamesToCompare.push_back("MSF"); //27
+  blockNamesToCompare.push_back("MFST");//28
+  blockNamesToCompare.push_back("NMF"); //29
+  blockNamesToCompare.push_back("EOUT");//30
+  blockNamesToCompare.push_back("EREC");//31
+  blockNamesToCompare.push_back("EOLD");//32
+  blockNamesToCompare.push_back("TDYN");//33
+  blockNamesToCompare.push_back("SFRo");//34
+  blockNamesToCompare.push_back("CLCK");//35
+  blockNamesToCompare.push_back("Egy0");//36
+  blockNamesToCompare.push_back("GRAD");//37
+  blockNamesToCompare.push_back("BHMA");//38
+  blockNamesToCompare.push_back("BHMD");//39
+  blockNamesToCompare.push_back("BHPC");//40
+  blockNamesToCompare.push_back("ACRB");//41
   
+  std::vector<std::vector<bool>> blocksFields = 
+  { 
+    {1,1,1,1,1,1}, // 0: POS, VEL, ID, MASS, IDU, TSTP, POT, ACCE
+    {1,0,0,0,0,0}, // 1: U, TEMP, RHO, NE, NH, HSML, SFR, CLDX, ENDT, HOTT, MHOT, MCLD, EHOT, MSF, MFST, NMF, EOUT, EREC, EOLD, TDYN, SFRo, CLCK, Egy0, GRAD
+    {0,0,0,0,1,1}, // 2: AGE
+    {1,0,0,0,1,0}, // 3: Z, Zs, ZAGE, ZALV
+    {0,0,0,0,1,0}, // 4: iM
+    {0,0,0,0,0,1}  // 5: BHMA, BHMD, BHPC, ACRB
+  };
+
+  std::vector<int> blockNamesToFields 
+  {
+    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 3, 3, 1, 0, 0, 0,
+    1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5
+  };
+
+  std::vector<int> blockSize 
+  {
+    3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1
+  };
+
+  std::unordered_map<std::string,int>mapBlockNamesToFields;
+  std::unordered_map<std::string,int>mapBlockSize;
+
+  for (i = 0; i < blockNamesToCompare.size(); ++i){
+    mapBlockNamesToFields[blockNamesToCompare[i]] = blockNamesToFields[i];
+  }
+
+  for (i = 0; i < blockNamesToCompare.size(); ++i){
+    mapBlockSize[blockNamesToCompare[i]] = blockSize[i];
+  }
+
+  std::vector<std::vector<std::string> > namesFields;
+  std::vector<std::string> tmpNamesFields;
   std::string pathHeader = "";  int KK=0;
   
   /*!=======================================================================*/	/*!========================== Open and Check FILE ========================*/
+
+  MPI_File inFile;
+  std::string fileName;
+
+  std::filesystem::path p(m_pointsFileName.c_str());
+  fileName = m_pointsFileName.c_str();
   
-  std::ifstream inFile;
-  inFile.open(m_pointsFileName.c_str(), std::ios::binary);
-	
+  if(numFiles > 1 && p.extension().generic_string().size() > 0 && isNumeric(p.extension().generic_string().substr(1)) ){
+    for(int i = 0; i < p.extension().generic_string().substr(1).size(); i++){
+      fileName.pop_back();
+    }
+  }
+
+  if(numFiles > 1) MPI_File_open(MPI_COMM_WORLD,
+    (fileName + std::to_string(0)).c_str(), 
+    MPI_MODE_RDONLY,
+    MPI_INFO_NULL, &inFile);
+  else MPI_File_open(MPI_COMM_WORLD,
+                     fileName.c_str(), 
+                     MPI_MODE_RDONLY,
+                     MPI_INFO_NULL, &inFile);
+
   if (!inFile)
   {
     std::cerr<<"Error while opening block"<<std::endl;
     return -1;
   }
-	
-  /*=======================================================================*/
-		
-  switch(m_snapformat)
-  {
-    case 1:
-      /*!==================   TYPE 1  FILE     =================================*/
-      /*!=========== Check Dimension BLOCK & SETTING variable CHUNK ============*/	/*!===========              for buffer of reading.            ============*/
-      /*!=======================================================================*/
 
-      for (type=0; type<6; type++)
-      {
-        if (m_pHeaderType1.npart[type] != 0 && m_pHeaderType1.npart[type] <= minPart)
-          minPart=m_pHeaderType1.npart[type]; //minimum number of part for all species
-      }
+  //create list of blocks to read
+  MPI_Status status;
+  std::vector<std::string> listOfBlocks;
+  MPI_File_seek(inFile, 280, MPI_SEEK_SET);
 
-      if (minPart <= 2500000)
-        chunk = minPart;
-      else
-        chunk = 2500000;
-	
-	  
-      /*=======================================================================*/
-      /*!=========== Create OUTPUT file for each species =======================*/
+  do{ 
+    MPI_File_seek(inFile, 4, MPI_SEEK_CUR);
+    MPI_File_read(inFile, (char *)(tagTmp), 4, MPI_CHAR, &status);
+    tag = strtok(tagTmp, " ");
+    if(std::find(blockNamesToCompare.begin(), blockNamesToCompare.end(), tag) != blockNamesToCompare.end() && iCompare(tag, "Zs") != 0)
+      listOfBlocks.push_back(tag);
+    MPI_File_read(inFile, &m_sizeBlock, 1, MPI_INT, &status);  
+    if (needSwap)
+      m_sizeBlock[0]=intSwap((char *)(&m_sizeBlock[0]));
+    MPI_File_seek(inFile, m_sizeBlock[0], MPI_SEEK_CUR);
+    MPI_File_read(inFile, &m_sizeBlock, 1, MPI_INT, &status); 
+  }while(status._ucount >= 4);
+  MPI_File_close(&inFile);
 
-      for (type=0; type<6; type++)  //!for all species
-      {
-        if (m_pHeaderType1.npart[type] != 0)	//!if there are particles
-        {	
-          std::string nameFileBinOut =  pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-          std::ofstream outFileBin;
-          outFileBin.open(nameFileBinOut.c_str(), std::ios::binary /*| ios::app*/);
-          outFileBin.close();
-        }
-      }	
+  // Get the number of processes
+  int num_proc;
+  MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 
-      /*=======================================================================*/
-      /*=======================================================================*/
-      /*!======================== Start Processing FILE ========================*/
-	
-      inFile.seekg(264, std::ios::beg);  //** BEGINNING BLOCK POS TYPE 1**//
-	  
-      for (block=0; block<7; block++)
-      {/*2*/
-	   
-        inFile.read((char *)(m_sizeBlock), sizeof(int));
-
-        /*=========================================================================================================*/
-
-        if (block == 0 || block == 1)  //Tridimensional elements: pos, vel!
-        {/*3*/
-          for (type=0; type<6; type++)
-          {/*4*/
-            if (m_pHeaderType1.npart[type] != 0)
-            {/*5*/
-              pToStart=((3*threeDim*m_pHeaderType1.npart[type]) + (oneDim*m_pHeaderType1.npart[type]) + (otherBlock*m_pHeaderType1.npart[type]));
-				
-
-              float *bufferBlock=NULL;
-              bufferBlock = new float[3*chunk];
- 				   
-              float *buffer_X=NULL;
-              buffer_X = new float[chunk];
-              float *buffer_Y=NULL;
-              buffer_Y = new float[chunk];
-              float *buffer_Z=NULL;
-              buffer_Z = new float[chunk];
-									
-              std::string nameFileBinOut =pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-              std::ofstream outFileBin;
-              outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-							
-              n=m_pHeaderType1.npart[type]/chunk;
-              Resto=m_pHeaderType1.npart[type]-(chunk*n);
-
-              for (k=0; k<n; k++) //cycling n times (3*chunk of each) up to reach number of particles excluding Resto
-              {/*6*/
-                inFile.read((char *)(bufferBlock), 3*chunk*sizeof(float));
-   						
-// 								if( needSwap)
-// 								{
-// 									for (j=0; j<(3*chunk); j++)
-// 									{
-// 										bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-// 									}
-// 								}
-						  
-                /*=================================================================*/
-                /*!============ Buffer Block and Write out FILE [n-Cycle] ==========*/
-					
-/*								for (i=1; i<=(chunk); i++)
-                {
-                buffer_X[i-1] = bufferBlock[3*i-3];
-              }
-   					   
-                for (i=1; i<=(chunk); i++)
-                {
-                buffer_Y[i-1] = bufferBlock[3*i-2];
-              }
-   
-                for (i=1; i<=(chunk); i++)
-                {
-                buffer_Z[i-1] = bufferBlock[3*i-1];
-              }*/
-                if(needSwap)
-                  for (i=0; i<chunk; i++)
-                {	
-                  buffer_X[i] = floatSwap((char *)(&bufferBlock[3*i]));
-                  buffer_Y[i] = floatSwap((char *)(&bufferBlock[3*i+1]));
-                  buffer_Z[i] = floatSwap((char *)(&bufferBlock[3*i+2]));
-                }
-                else
-                  for (i=0; i<chunk; i++)
-                {	
-                  buffer_X[i] = bufferBlock[3*i];
-                  buffer_Y[i] = bufferBlock[3*i+1];
-                  buffer_Z[i] = bufferBlock[3*i+2];
-                }
-						
-                pWriteX=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)));
-                outFileBin.seekp(pWriteX);
-                outFileBin.write ((char *)(buffer_X), chunk*sizeof(float));
-
-                pWriteY=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)) + (m_pHeaderType1.npart[type]*sizeof(float)));
-                outFileBin.seekp(pWriteY);
-                outFileBin.write ((char *)(buffer_Y), chunk*sizeof(float));
-
-                pWriteZ=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)) + (2*m_pHeaderType1.npart[type]*sizeof(float)));
-                outFileBin.seekp(pWriteZ);
-                outFileBin.write ((char *)(buffer_Z), chunk*sizeof(float));
-
-                /*=======================================================================*/
-
-              }/*6*/
-
-              /*=================================================================*/
-              /*!============ Buffer Block and Write out FILE [Resto] ============*/
- 
-              inFile.read((char *)(bufferBlock), 3*Resto*sizeof(float));
-						  
-// 							if(needSwap)
-// 							{
-// 								for (j=0; j<(3*Resto); j++)
-// 								{
-// 									bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-// 								}
-// 							}
-              // 
-// 							for (i=1; i<=(3*Resto); i++)
-// 							{
-// 								buffer_X[i-1] = bufferBlock[3*i-3];      
-// 							}
-              //    
-// 							for (i=1; i<=(Resto); i++)
-// 							{
-// 								buffer_Y[i-1] = bufferBlock[3*i-2]; 
-// 							}
-              // 
-// 							for (i=1; i<=(Resto); i++)
-// 							{
-// 								buffer_Z[i-1] = bufferBlock[3*i-1];      
-// 							}
-              if(needSwap)
-                for (i=0; i<Resto; i++)
-              {	
-                buffer_X[i] = floatSwap((char *)(&bufferBlock[3*i]));
-                buffer_Y[i] = floatSwap((char *)(&bufferBlock[3*i+1]));
-                buffer_Z[i] = floatSwap((char *)(&bufferBlock[3*i+2]));
-              }
-              else
-                for (i=0; i<Resto; i++)
-              {	
-                buffer_X[i] = bufferBlock[3*i];
-                buffer_Y[i] = bufferBlock[3*i+1];
-                buffer_Z[i] = bufferBlock[3*i+2];
-              }
-
-              pWriteX=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)));
-              outFileBin.seekp(pWriteX);
-              outFileBin.write ((char *)(buffer_X), Resto*sizeof(float));
-
-              pWriteY=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)) + (m_pHeaderType1.npart[type]*sizeof(float)));
-              outFileBin.seekp(pWriteY);
-              outFileBin.write ((char *)(buffer_Y), Resto*sizeof(float));
-
-              pWriteZ=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)) + (2*m_pHeaderType1.npart[type]*sizeof(float)));
-              outFileBin.seekp(pWriteZ);
-              outFileBin.write ((char *)(buffer_Z), Resto*sizeof(float));
-
-              /*=================================================================*/  
-
-              delete [] buffer_X;
-              delete [] buffer_Y;
-              delete [] buffer_Z;
-
-              delete [] bufferBlock;
-              outFileBin.close();
-
-            }/*5*/
-
-            else //!of if(nPart!=0)
-            {
-              n=0;
-              Resto=0;
-            }
-
-          }/*4*///!close for on type
-
-          pWriteX=0; pWriteY=0; pWriteZ=0;
-          threeDim++;
-        }/*3*/
-	   
-	   
-        else  //! block greather than 2
-        {/*a*/
-          if (block == 3)
-          {/*b*/
-// 				oneDim++;
-            for (type=0; type<6; type++)
-            {/*c*/
-              if (m_pHeaderType1.npart[type] != 0)
-              {/*d*/
-                pToStart=((3*threeDim*m_pHeaderType1.npart[type]) + (oneDim*m_pHeaderType1.npart[type]) + (otherBlock*m_pHeaderType1.npart[type]));
-						
-                n=m_pHeaderType1.npart[type]/chunk;
-                Resto=m_pHeaderType1.npart[type]-(chunk*n);
-
-                float *bufferBlock = NULL;
-                bufferBlock = new float [chunk]; 
-
-                std::string nameFileBinOut =  pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-                std::ofstream outFileBin;
-                outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-                for (k=0; k<n; k++)
-                {/*e*/
-                  inFile.read((char *)(bufferBlock), chunk*sizeof(float));
-								  
-                  if( needSwap)
-                    for (j=0; j<(chunk); j++)
-                      bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-							
-                  pWrite=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)));
-                  outFileBin.seekp(pWrite);
-                  outFileBin.write ((char *)(bufferBlock), chunk*sizeof(float));
-                }/*e*/
-
-                inFile.read((char *)(bufferBlock), Resto*sizeof(float));
-							  
-                if( needSwap)
-                  for (j=0; j<Resto; j++)
-                    bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-						
-                pWrite=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)));
-                outFileBin.seekp(pWrite);
-                outFileBin.write ((char *)(bufferBlock), Resto*sizeof(float));
-
-                delete [] bufferBlock;
-                outFileBin.close();
-              }/*d*/	      
-
-              else 
-              {
-                n=0;
-                Resto=0;
-              }
-
-            }/*c*/
-            oneDim++;
-          }/*b*/
-	   
-          else
-          {/*a*/
-            if (block == 2)
-            {/*b*/
-// 				oneDim++;
-              for (type=0; type<6; type++)
-              {/*c*/
-                if (m_pHeaderType1.npart[type] != 0)
-                {/*d*/
-                  pToStart=((3*threeDim*m_pHeaderType1.npart[type]) + (oneDim*m_pHeaderType1.npart[type]) + (otherBlock*m_pHeaderType1.npart[type]));
-						
-                  n=m_pHeaderType1.npart[type]/chunk;
-                  Resto=m_pHeaderType1.npart[type]-(chunk*n);
-
-                  int *bufferBlock = NULL;
-                  bufferBlock = new int [chunk]; 
-
-                  std::string nameFileBinOut =  pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-                  std::ofstream outFileBin;
-                  outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-                  for (k=0; k<n; k++)
-                  {/*e*/
-                    inFile.read((char *)(bufferBlock), chunk*sizeof(int));
-									  
-                    if(needSwap)
-                      for (j=0; j<chunk; j++)
-                        bufferBlock[j]=intSwap((char *)(&bufferBlock[j]));
-							
-                    pWrite=((pToStart*sizeof(int)) + (k*chunk*sizeof(int)));
-                    outFileBin.seekp(pWrite);
-                    outFileBin.write ((char *)(bufferBlock), chunk*sizeof(int));
-                  }/*e*/
-
-                  inFile.read((char *)(bufferBlock), Resto*sizeof(int));
-								  
-                  if(needSwap)
-                    for (j=0; j<Resto; j++)
-                      bufferBlock[j]=intSwap((char *)(&bufferBlock[j]));
-						
-                  pWrite=((pToStart*sizeof(int)) + (n*chunk*sizeof(int)));
-                  outFileBin.seekp(pWrite);
-                  outFileBin.write ((char *)(bufferBlock), Resto*sizeof(int));
-
-                  delete [] bufferBlock;
-                  outFileBin.close();
-                }/*d*/	      
-
-                else 
-                {
-                  n=0;
-                  Resto=0;
-                }
-
-              }/*c*/
-              oneDim++;
-            }/*b*/
-
-		   
-            else
-            {/*I*/
-// 				otherBlock++;
-              for (type=0; type<1; type++)
-              {/*II*/
-                if (m_pHeaderType1.npart[type] != 0)
-                {/*III*/
-                  pToStart=((3*threeDim*m_pHeaderType1.npart[type]) + (oneDim*m_pHeaderType1.npart[type]) + (otherBlock*m_pHeaderType1.npart[type]));
-						
-                  n=m_pHeaderType1.npart[type]/chunk;
-                  Resto=m_pHeaderType1.npart[type]-(chunk*n);
-
-                  float *bufferBlock = NULL;
-                  bufferBlock = new float [chunk]; 
-
-                  std::string nameFileBinOut = pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-                  std::ofstream outFileBin;
-                  outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-                  for (k=0; k<n; k++)
-                  {/*IV*/
-                    inFile.read((char *)(bufferBlock), chunk*sizeof(float));
-								  
-                    if( needSwap)
-                    {
-                      for (j=0; j<chunk; j++)
-                      {
-                        bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-                      }
-                    }
-					
-                    pWrite=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)));
-                    outFileBin.seekp(pWrite);
-                    outFileBin.write ((char *)(bufferBlock), chunk*sizeof(float));
-                  }/*IV*/
-
-                  inFile.read((char *)(bufferBlock), Resto*sizeof(float));
-								  
-                  if( needSwap)
-                    for (j=0; j<Resto; j++)
-                      bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-						
-                  pWrite=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)));
-                  outFileBin.seekp(pWrite);
-                  outFileBin.write ((char *)(bufferBlock), Resto*sizeof(float));
-
-                  delete [] bufferBlock;
-                  outFileBin.close();
-                }/*III*/
-
-                else 
-                {
-                  n=0;
-                  Resto=0;
-                }
-
-              }/*II*/
-              otherBlock++;
-            }/*I*/
-
-          }/*a*/
-        }
-		
-        inFile.seekg (4, std::ios::cur);   //!** Beginning next block **//
-
-      }/*2*/
-	   
-      break;  /*! END Snapformat 1 */
-	  
-    case 2:
- 
-      /*=======================================================================*/
-      /*!=========== Check Dimension BLOCK & SETTING variable CHUNK ============*/
-      /*!===========              for buffer of reading.            ============*/
-      /*=======================================================================*/
-	
-      for (type=0; type<6; type++)
-      {
-        if (m_pHeaderType2.npart[type] != 0 && m_pHeaderType2.npart[type] <= minPart)
-        {	
-          minPart=m_pHeaderType2.npart[type];
-        }
-      }
-	
-      if (minPart <= 2500000)
-      {
-        chunk = minPart;
-      }
-      else
-      {
-        chunk = 2500000;
-      }
-	
-      /*!=======================================================================*/
-      /*=======================================================================*/
-      /*!==================== Create final file for TYPE =======================*/
-	
-      for (type=0; type<6; type++)
-      {
-        if (m_pHeaderType2.npart[type] != 0)	
-        {	
-          std::string nameFileBinOut =  pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-          std::ofstream outFileBin;
-          outFileBin.open(nameFileBinOut.c_str(), std::ios::binary /*| ios::app*/);
-          outFileBin.close();
-        }
-      }	
-	
-      /*=======================================================================*/
-	
-	
-      /*=======================================================================*/
-      /*!======================== Start Processing FILE ========================*/
+  AbstractReader* reader;
+  if(num_proc > 2) reader = new mpiGadgetReader(
+    fileName, pathFileOut, numFiles, m_pHeaderType2, listOfBlocks, blockNamesToCompare);
+  else reader = new serialGadgetReader(fileName, pathFileOut, numFiles, m_pHeaderType2, listOfBlocks.size(), blockNamesToCompare);
   
-      inFile.seekg(284, std::ios::beg);  //** BEGINNING BLOCK POS **//
-  
-//   while (!inFile.eof()) 
-      //   { /* ON WHILE */
-  
-      for (block=0; block<(numBlock); block++)
-// 	for (block=0; block<2; block++)
-      {/*2*/
-
-        inFile.read((char *)(tagTmp), 4*sizeof(char));
-// 		std::clog<<"tagTmp="<<tagTmp<<std::endl;
-
-        tag=strtok(tagTmp, " ");
-// 		std::clog<<"tag="<<tag<<std::endl;
-
-        blockNames.push_back(tag);
-// 		std::clog<<"blockNames[block]="<<blockNames[block]<<std::endl;
-
-        inFile.seekg (8, std::ios::cur);
-        inFile.read((char *)(m_sizeBlock), sizeof(int));
-
-        /*=========================================================================================================*/
-
-        if (iCompare (blockNames[block].c_str(), blockNamesToCompare[0].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[1].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[8].c_str()) == 0)
-        {/*3*/
-          for (type=0; type<6; type++)
-          {/*4*/
-            if (m_pHeaderType2.npart[type] != 0)
-            {/*5*/
-              pToStart=((3*threeDim*m_pHeaderType2.npart[type]) + (oneDim*m_pHeaderType2.npart[type]) + (otherBlock*m_pHeaderType2.npart[type]));
-					
-// 				std::clog<<"Extraction Block "<<tagTypeForNameFile[type]<< "_" <<blockNames[block]<<std::endl;
-              n=m_pHeaderType2.npart[type]/chunk;
-              Resto=m_pHeaderType2.npart[type]-(chunk*n);
-
-              float *bufferBlock=NULL;
-              bufferBlock = new float[3*chunk];
- 
-              float *buffer_X=NULL;
-              buffer_X = new float[chunk];
-              float *buffer_Y=NULL;
-              buffer_Y = new float[chunk];
-              float *buffer_Z=NULL;
-              buffer_Z = new float[chunk];
-									
-              std::string nameFileBinOut =pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-              std::ofstream outFileBin;
-              outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-              for (k=0; k<n; k++)
-              {/*6*/
-                inFile.read((char *)(bufferBlock), 3*chunk*sizeof(float));
-
-                if(needSwap)
-                  for (i=0; i<chunk; i++)
-                {	
-                  buffer_X[i] = floatSwap((char *)(&bufferBlock[3*i]));
-                  buffer_Y[i] = floatSwap((char *)(&bufferBlock[3*i+1]));
-                  buffer_Z[i] = floatSwap((char *)(&bufferBlock[3*i+2]));
-                }
-                else
-                  for (i=0; i<chunk; i++)
-                {	
-                  buffer_X[i] = bufferBlock[3*i];
-                  buffer_Y[i] = bufferBlock[3*i+1];
-                  buffer_Z[i] = bufferBlock[3*i+2];
-                }
-
-	    
-// 								if( needSwap)
-// 									for (j=0; j<(3*chunk); j++)
-// 										bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-                //    
-                // 								/*=================================================================*/
-                /*!============ Buffer Block and Write out FILE [n-Cycle] ==========*/
-                // 						
-// 								for (i=1; i<=(chunk); i++)
-// 								{
-// 									buffer_X[i-1] = bufferBlock[3*i-3];
-// // 							std::clog<<"buffer_X="<<buffer_X[i-1]<<" and bufferBlock=" <<bufferBlock[3*i-3]<<std::endl;
-// 								}
-                //    
-// 								for (i=1; i<=(chunk); i++)
-// 								{
-// 									buffer_Y[i-1] = bufferBlock[3*i-2];
-// 								}
-                //    
-// 								for (i=1; i<=(chunk); i++)
-// 								{
-// 									buffer_Z[i-1] = bufferBlock[3*i-1];
-// 								}
-
-//             for (i=1; i<=10; i++)
-//             {
-// 						std::clog<<"buffer_X="<<buffer_X[i-1]<<" and bufferBlock=" <<bufferBlock[3*i-3]<<std::endl;
-// 						std::clog<<"buffer_Y="<<buffer_Y[i-1]<<" and bufferBlock=" <<bufferBlock[3*i-2]<<std::endl;
-// 						std::clog<<"buffer_Z="<<buffer_Z[i-1]<<" and bufferBlock=" <<bufferBlock[3*i-1]<<std::endl;
-//             }
-						
-                pWriteX=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)));
-                outFileBin.seekp(pWriteX);
-                outFileBin.write ((char *)(buffer_X), chunk*sizeof(float));
-
-                pWriteY=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)) + (m_pHeaderType2.npart[type]*sizeof(float)));
-                outFileBin.seekp(pWriteY);
-                outFileBin.write ((char *)(buffer_Y), chunk*sizeof(float));
-
-                pWriteZ=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)) + (2*m_pHeaderType2.npart[type]*sizeof(float)));
-                outFileBin.seekp(pWriteZ);
-                outFileBin.write ((char *)(buffer_Z), chunk*sizeof(float));
-
-                /*=======================================================================*/
-
-              }/*6*/
-
-              /*=================================================================*/
-              /*============ Buffer Block and Write out FILE [Resto] ============*/
- 
-              inFile.read((char *)(bufferBlock), 3*Resto*sizeof(float));
-              if(needSwap)
-                for (i=0; i<Resto; i++)
-              {	
-                buffer_X[i] = floatSwap((char *)(&bufferBlock[3*i]));
-                buffer_Y[i] = floatSwap((char *)(&bufferBlock[3*i+1]));
-                buffer_Z[i] = floatSwap((char *)(&bufferBlock[3*i+2]));
-              }
-              else
-                for (i=0; i<Resto; i++)
-              {	
-                buffer_X[i] = bufferBlock[3*i];
-                buffer_Y[i] = bufferBlock[3*i+1];
-                buffer_Z[i] = bufferBlock[3*i+2];
-              }
-
-/*							if( needSwap)
-              {
-              for (j=0; j<(3*Resto); j++)
-              {
-              bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-            }
-            }
-
-              for (i=1; i<=(Resto); i++)
-              {
-              buffer_X[i-1] = bufferBlock[3*i-3];      
-            }
-   
-              for (i=1; i<=(Resto); i++)
-              {
-              buffer_Y[i-1] = bufferBlock[3*i-2]; 
-            }
-
-              for (i=1; i<=(Resto); i++)
-              {
-              buffer_Z[i-1] = bufferBlock[3*i-1];      
-            }
-*/
-              pWriteX=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)));
-              outFileBin.seekp(pWriteX);
-              outFileBin.write ((char *)(buffer_X), Resto*sizeof(float));
-
-              pWriteY=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)) + (m_pHeaderType2.npart[type]*sizeof(float)));
-              outFileBin.seekp(pWriteY);
-              outFileBin.write ((char *)(buffer_Y), Resto*sizeof(float));
-
-              pWriteZ=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)) + (2*m_pHeaderType2.npart[type]*sizeof(float)));
-              outFileBin.seekp(pWriteZ);
-              outFileBin.write ((char *)(buffer_Z), Resto*sizeof(float));
-
-              /*=================================================================*/  
-
-              delete [] buffer_X;
-              delete [] buffer_Y;
-              delete [] buffer_Z;
-
-              delete [] bufferBlock;
-              outFileBin.close();
-
-            }/*5*/
-
-            else 
-            {
-              n=0;
-              Resto=0;
-            }
-
-          }/*4*/
-          pWriteX=0; pWriteY=0; pWriteZ=0;
-          threeDim++;
-        }/*3*/
-		
-        else if (iCompare (blockNames[block].c_str(), blockNamesToCompare[3].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[7].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[10].c_str()) == 0)
-        {/*b*/
-// 				oneDim++;
-          for (type=0; type<6; type++)
-          {/*c*/
-            if (m_pHeaderType2.npart[type] != 0)
-            {/*d*/
-              pToStart=((3*threeDim*m_pHeaderType2.npart[type]) + (oneDim*m_pHeaderType2.npart[type]) + (otherBlock*m_pHeaderType2.npart[type]));
-						
-// 						std::clog<<"Extraction Block "<<tagTypeForNameFile[type]<<"_" <<blockNames[block]<<std::endl;
-
-              n=m_pHeaderType2.npart[type]/chunk;
-              Resto=m_pHeaderType2.npart[type]-(chunk*n);
-
-              float *bufferBlock = NULL;
-              bufferBlock = new float [chunk]; 
-
-              std::string nameFileBinOut =  pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-              std::ofstream outFileBin;
-              outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-              for (k=0; k<n; k++)
-              {/*e*/
-                inFile.read((char *)(bufferBlock), chunk*sizeof(float));
-	      
-                if( needSwap)
-                  for (j=0; j<chunk; j++)
-                    bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-							
-                pWrite=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)));
-                outFileBin.seekp(pWrite);
-                outFileBin.write ((char *)(bufferBlock), chunk*sizeof(float));
-              }/*e*/
-
-              inFile.read((char *)(bufferBlock), Resto*sizeof(float));
-	    
-              if( needSwap)
-                for (j=0; j<Resto; j++)
-                  bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-						
-              pWrite=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)));
-              outFileBin.seekp(pWrite);
-              outFileBin.write ((char *)(bufferBlock), Resto*sizeof(float));
-
-              delete [] bufferBlock;
-              outFileBin.close();
-            }/*d*/	      
-
-            else 
-            {
-              n=0;
-              Resto=0;
-            }
-
-          }/*c*/
-          oneDim++;
-        }/*b*/
-      
-      
-        else if (iCompare (blockNames[block].c_str(), blockNamesToCompare[2].c_str()) == 0)
-        {/*bb*/
-// 		oneDim++;
-          for (type=0; type<6; type++)
-          {/*cc*/
-            if (m_pHeaderType2.npart[type] != 0)
-            {/*dd*/
-              pToStart=((3*threeDim*m_pHeaderType2.npart[type]) + (oneDim*m_pHeaderType2.npart[type]) + (otherBlock*m_pHeaderType2.npart[type]));
-						
-// 						std::clog<<"Extraction Block "<<tagTypeForNameFile[type]<<"_" <<blockNames[block]<<std::endl;
-
-              n=m_pHeaderType2.npart[type]/chunk;
-              Resto=m_pHeaderType2.npart[type]-(chunk*n);
-
-              int *bufferBlock = NULL;
-              bufferBlock = new int [chunk]; 
-
-              std::string nameFileBinOut =  pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-              std::ofstream outFileBin;
-              outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-              for (k=0; k<n; k++)
-              {/*ee*/
-                inFile.read((char *)(bufferBlock), chunk*sizeof(int));
-					      
-                if( needSwap)
-                  for (j=0; j<chunk; j++)
-                    bufferBlock[j]=intSwap((char *)(&bufferBlock[j]));
-							
-                pWrite=((pToStart*sizeof(int)) + (k*chunk*sizeof(int)));
-                outFileBin.seekp(pWrite);
-                outFileBin.write ((char *)(bufferBlock), chunk*sizeof(int));
-              }/*ee*/
-
-              inFile.read((char *)(bufferBlock), Resto*sizeof(int));
-				      
-              if( needSwap)
-                for (j=0; j<Resto; j++)
-                  bufferBlock[j]=intSwap((char *)(&bufferBlock[j]));
-						
-              pWrite=((pToStart*sizeof(int)) + (n*chunk*sizeof(int)));
-              outFileBin.seekp(pWrite);
-              outFileBin.write ((char *)(bufferBlock), Resto*sizeof(int));
-
-              delete [] bufferBlock;
-              outFileBin.close();
-            }/*dd*/	      
-
-            else 
-            {
-              n=0;
-              Resto=0;
-            }
-
-          }/*cc*/
-          oneDim++;
-        }/*bb*/
-      
-      
-        else if (iCompare (blockNames[block].c_str(), blockNamesToCompare[4].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[5].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[6].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[9].c_str()) == 0)
-        {/*bbb*/
-			      
-		// 	otherBlock++;
-// 			inFile.seekg (m_sizeBlock[0], std::ios::cur);
-          for (type=0; type<1; type++)
-          {/*II*/
-            if (m_pHeaderType2.npart[type] != 0)
-            {/*III*/
-              pToStart=((3*threeDim*m_pHeaderType2.npart[type]) + (oneDim*m_pHeaderType2.npart[type]) + (otherBlock*m_pHeaderType2.npart[type]));
-			
-// 				std::clog<<"Extraction Block "<<tagTypeForNameFile[type]<< "_" <<blockNames[block]<<std::endl;
-
-              n=m_pHeaderType2.npart[type]/chunk;
-              Resto=m_pHeaderType2.npart[type]-(chunk*n);
-
-              float *bufferBlock = NULL;
-              bufferBlock = new float [chunk]; 
-
-              std::string nameFileBinOut = pathFileOut + tagTypeForNameFile[type].c_str() + bin;
-              std::ofstream outFileBin;
-              outFileBin.open(nameFileBinOut.c_str(), std::ios::binary | std::ios::in /*| ios::app*/);
-
-              for (k=0; k<n; k++)
-              {/*IV*/
-                inFile.read((char *)(bufferBlock), chunk*sizeof(float));
-
-                if (needSwap)
-                  for (j=0; j<chunk; j++)
-                    bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-                pWrite=((pToStart*sizeof(float)) + (k*chunk*sizeof(float)));
-                outFileBin.seekp(pWrite);
-                outFileBin.write ((char *)(bufferBlock), chunk*sizeof(float));
-              }/*IV*/
-
-              inFile.read((char *)(bufferBlock), Resto*sizeof(float));
-
-              if (needSwap)
-                for (j=0; j<Resto; j++)
-                  bufferBlock[j]=floatSwap((char *)(&bufferBlock[j]));
-
-              pWrite=((pToStart*sizeof(float)) + (n*chunk*sizeof(float)));
-              outFileBin.seekp(pWrite);
-              outFileBin.write ((char *)(bufferBlock), Resto*sizeof(float));
-
-              delete [] bufferBlock;
-              outFileBin.close();
-            }/*III*/
-
-            else 
-            {
-              n=0;
-              Resto=0;
-            }
-			      
-          }/*II*/
-          otherBlock++;
-        } /*bbb*/ 
-	      
-        else
-        {/*I*/
-//     otherBlock++;
-          inFile.seekg (m_sizeBlock[0], std::ios::cur);
-        }/*I*/
-    
-    
-        inFile.seekg (8, std::ios::cur);   //** Beginning next block **//
-
-      }/* OFF WHILE */
-  
-  
-      /*=================================================================*/
-  
-      break;  /* END Snapformat 2 */
-    
+  if(num_proc <= 2) reader->startRead(needSwap);
+  else if(reader->startRead(needSwap)!= 0) {
+    MPI_Finalize();
+    return -1;
   }
-  /*=================================================================*/
-  
-  inFile.close();
-    
+   
   /*=================================================================*/
   /*!=========== Read information to write FILE.bin.head =============*/
   
-  inFile.open(m_pointsFileName.c_str(), std::ios::binary);
-  
-  switch(m_snapformat)
-  {
-    case 2:
-
-
-      int ii, jj, kk, yy;  
-
-
-//   inFile.seekg (288, std::ios::beg);
-      for (type=0; type<6; type++)
-      {/*I*/
-        if (m_pHeaderType2.npart[type] == 0)
-        {
-          tmpNamesFields.clear();
-          tmpNamesFields.push_back(" ");
-          namesFields.push_back(tmpNamesFields);
-          tmpNamesFields.clear();
-        }
-    
-        else if (m_pHeaderType2.npart[type] != 0)
-        {
-//       m_sizeBlock[0]=0;
-          inFile.seekg (280, std::ios::beg);  //** START BLOCK POS **//
-//          std::clog<<"m_sizeBlock="<<m_sizeBlock[0]<<std::endl;
-
-          ii=0;
-          jj=0;
-          kk=0;
-
-          for (block=0; block<(numBlock); block++)
-//    for (block=0; block<2; block++)
-          {/*II*/                
-//         std::clog<<"blockNames"<<blockNames[block]<<std::endl;
-            inFile.seekg (8, std::ios::cur);
-            inFile.read((char *)(m_sizeBlock), sizeof(int));
-	
-            if (needSwap)
-              m_sizeBlock[0]=intSwap((char *)(&m_sizeBlock[0]));
-//            std::clog<<"m_sizeBlock="<<m_sizeBlock[0]<<std::endl;
-
-            inFile.seekg (m_sizeBlock[0], std::ios::cur);
-            inFile.seekg (4, std::ios::cur);
-
-            if (m_pHeaderType2.npart[type] != 0 /*&& type == 0*/ && (iCompare (blockNames[block].c_str(), blockNamesToCompare[0].c_str()) == 0 || strcmp (blockNames[block].c_str(), blockNamesToCompare[1].c_str()) == 0 || strcmp (blockNames[block].c_str(), blockNamesToCompare[8].c_str()) == 0))
-            {/*III*/
-              ii++;
-              tmpNamesFields.push_back(blockNames[block] + X);
-              tmpNamesFields.push_back(blockNames[block] + Y);
-              tmpNamesFields.push_back(blockNames[block] + Z);
-// 					j++;
-            }/*III*/
-
-            else
-              if (m_pHeaderType2.npart[type] != 0 && type == 0 && (iCompare (blockNames[block].c_str(), blockNamesToCompare[2].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[3].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[4].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[5].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[6].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[7].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[9].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[10].c_str()) == 0))
-            {/*IV*/
-              jj++;
-              tmpNamesFields.push_back(blockNames[block]);
-            }/*IV*/
-          
-//         else
-//           if (m_pHeaderType2.npart[type] != 0 && type == 0)
-            //         {/*V*/
-//           kk++;
-//           tmpNamesFields.push_back(blockNames[block]);
-            //         }/*V*/
-
-            //////////////////////////////          
-            else
-              if (m_pHeaderType2.npart[type] != 0 && type != 0 && (iCompare (blockNames[block].c_str(), blockNamesToCompare[2].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[3].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[7].c_str()) == 0 || iCompare (blockNames[block].c_str(), blockNamesToCompare[10].c_str()) == 0))
-            {/*IV*/
-              jj++;
-              tmpNamesFields.push_back(blockNames[block]);
-            }/*IV*/
-          
-//         else
-//           if (m_pHeaderType2.npart[type] != 0 && type != 0)
-            //         {/*V*/
-//           kk=0;
-            //         }/*V*/
-
-            else
-              if (m_pHeaderType2.npart[type] == 0 /*&& type != 0*/)
-            {/*V*/
-              ii=0;
-              jj=0;
-              kk=0;
-         
-            }/*V*/
-
-
-          }/*II*/
-          
-          namesFields.push_back(tmpNamesFields);
-          tmpNamesFields.clear();
-        }
-      }/*I*/
-
-
-      /*=================================================================*/		/*!===================== Write FILE.bin.head =======================*/
- 
-      for (type=0; type<6; type++)
+  for(type = 0; type < 6; type++){      
+    if (m_pHeaderType2[0].npart[type] == 0){       
+      tmpNamesFields.clear();
+      tmpNamesFields.push_back(" ");
+      namesFields.push_back(tmpNamesFields);
+      tmpNamesFields.clear();
+    }
+    else if (m_pHeaderType2[0].npart[type] != 0)
+    {
+      for(int i = 0; i < listOfBlocks.size(); i++)
       {
-   
-        if (m_pHeaderType2.npart[type] !=0)
-        {
-
-          for (KK=0; KK<namesFields[type].size(); KK++)
-          {
-//            std::clog<<"namesFields="<<namesFields[type][KK]<<std::endl;
-            m_fieldsNames.push_back(namesFields[type][KK]);
-          }
-          pathHeader= pathFileOut + tagTypeForNameFile[type] + bin;
-//          std::clog<<"pathHeader="<<pathHeader<<std::endl;
-
-          makeHeader((unsigned long long int)m_pHeaderType2.npart[type], pathHeader, m_fieldsNames,m_cellSize,m_cellComp,m_volumeOrTable);
-
-          m_fieldsNames.clear();
-          pathHeader="";
+        if(mapBlockSize[listOfBlocks[i]] == 3 && blocksFields[mapBlockNamesToFields[listOfBlocks[i]]][type]){
+          tmpNamesFields.push_back(listOfBlocks[i] + X);
+          tmpNamesFields.push_back(listOfBlocks[i] + Y);
+          tmpNamesFields.push_back(listOfBlocks[i] + Z);
         }
-      }
-
-      /*=================================================================*/
-  
-      break; /* END Snapformat 2 */
-  
-    case 1:
-
-      /*=================================================================*/
-      /*!===================== Write FILE.bin.head =======================*/
-
-	  
-      for (type=0; type<6; type++)
-      {
-        if (m_pHeaderType1.npart[type] !=0 && type == 0)
-        {
-          for (KK=0; KK<11; KK++)
-          {
-            m_fieldsNames.push_back(namesFieldsType1_GAS[KK]);
-          }
-          pathHeader= pathFileOut + tagTypeForNameFile[type] + bin;
-// 			  std::clog<<"pathHeader="<<pathHeader<<std::endl;
-
-          makeHeader((unsigned long long int) m_pHeaderType1.npart[type], pathHeader, m_fieldsNames,m_cellSize,m_cellComp,m_volumeOrTable);
-
-          m_fieldsNames.clear();
-          pathHeader="";
-        }
-        else
-          if (m_pHeaderType1.npart[type] !=0 && type != 0)
-        {
-          for (KK=0; KK<8; KK++)
-          {
-            m_fieldsNames.push_back(namesFieldsType1_Other[KK]);
-          }
-          pathHeader= pathFileOut + tagTypeForNameFile[type] + bin;
-// 			std::clog<<"pathHeader="<<pathHeader<<std::endl;
-
-          makeHeader((unsigned long long int)m_pHeaderType1.npart[type], pathHeader, m_fieldsNames,m_cellSize,m_cellComp,m_volumeOrTable);
-
-          m_fieldsNames.clear();
-          pathHeader="";
-        }
-      }
-
-      /*=================================================================*/
-  
-      break; /* END Snapformat 1 */
+        else if(mapBlockSize[listOfBlocks[i]] == 1 && blocksFields[mapBlockNamesToFields[listOfBlocks[i]]][type] && (iCompare(listOfBlocks[i], "MASS") != 0|| m_pHeaderType2[0].mass[type] == 0))
+          tmpNamesFields.push_back(listOfBlocks[i]);
+      }  
+      namesFields.push_back(tmpNamesFields);
+      tmpNamesFields.clear();
+    }
   }  
-  /*=================================================================*/
+  /*=================================================================*/		
+  /*!===================== Write FILE.bin.head =======================*/
 
-  inFile.close();
-	
-  /*=================================================================*/
-
-// 	std::clog<<"Finish Process"<<std::endl;
-
+  for (type=0; type<6; type++)
+  {
+    if(m_pHeaderType2[0].npartTotal[type] != 0)
+    {
+      for(int KK = 0; KK < namesFields[type].size(); KK++)
+      {
+        m_fieldsNames.push_back(namesFields[type][KK]);
+      }
+      pathHeader = pathFileOut + tagTypeForNameFile[type] + bin;
+      makeHeader((unsigned long long int)m_pHeaderType2[0].npartTotal[type], pathHeader, m_fieldsNames,m_cellSize,m_cellComp,m_volumeOrTable);
+      m_fieldsNames.clear();
+      pathHeader="";
+    }
+  }  
+  MPI_Finalize();
   return 0;
-} /* END */
+}
 
 //--------------------------------------
 void GadgetSource::swapHeaderType2()
 //--------------------------------------
 {
   char first_fortran_legacy[4]; //m_snapformat=2 : you have to "jump" 4+2*4 =12 bytes and you'll find the the Block size
-  m_pHeaderType2.boh[0] = intSwap((char*)(&m_pHeaderType2.boh[0]));
-  m_pHeaderType2.nBlock[0] = intSwap((char*)(&m_pHeaderType2.nBlock[0]));	
-  m_pHeaderType2.size[0] = intSwap((char*)(&m_pHeaderType2.size[0]));
+  m_pHeaderType2[0].boh[0] = intSwap((char*)(&m_pHeaderType2[0].boh[0]));
+  m_pHeaderType2[0].nBlock[0] = intSwap((char*)(&m_pHeaderType2[0].nBlock[0]));	
+  m_pHeaderType2[0].size[0] = intSwap((char*)(&m_pHeaderType2[0].size[0]));
 	  
   for (int i=0; i<6; i++)
-    m_pHeaderType2.npart[i] = intSwap((char*)(&m_pHeaderType2.npart[i]));
+    m_pHeaderType2[0].npart[i] = intSwap((char*)(&m_pHeaderType2[0].npart[i]));
 	  
   for (int i=0; i<6; i++)
-    m_pHeaderType2.mass[i] = intSwap((char*)(&m_pHeaderType2.mass[i]));
+    m_pHeaderType2[0].mass[i] = intSwap((char*)(&m_pHeaderType2[0].mass[i]));
 	  
-  m_pHeaderType2.time[0] = doubleSwap((char*)(&m_pHeaderType2.time[0]));
-  m_pHeaderType2.redshift[0] = doubleSwap((char*)(&m_pHeaderType2.redshift[0]));
-  m_pHeaderType2.flag_sfr[0] = intSwap((char*)(&m_pHeaderType2.flag_sfr[0]));
-  m_pHeaderType2.flag_feedback[0] = intSwap((char*)(&m_pHeaderType2.flag_feedback[0]));
+  m_pHeaderType2[0].time[0] = doubleSwap((char*)(&m_pHeaderType2[0].time[0]));
+  m_pHeaderType2[0].redshift[0] = doubleSwap((char*)(&m_pHeaderType2[0].redshift[0]));
+  m_pHeaderType2[0].flag_sfr[0] = intSwap((char*)(&m_pHeaderType2[0].flag_sfr[0]));
+  m_pHeaderType2[0].flag_feedback[0] = intSwap((char*)(&m_pHeaderType2[0].flag_feedback[0]));
 	  
   for (int i=0; i<6; i++)
-    m_pHeaderType2.npartTotal[i] = intSwap((char*)(&m_pHeaderType2.npartTotal[i]));
+    m_pHeaderType2[0].npartTotal[i] = intSwap((char*)(&m_pHeaderType2[0].npartTotal[i]));
    
-  m_pHeaderType2.foling[0] = intSwap((char*)(&m_pHeaderType2.foling[0]));
-  m_pHeaderType2.num_files[0] = intSwap((char*)(&m_pHeaderType2.num_files[0]));
-  m_pHeaderType2.BoxSize[0] = doubleSwap((char*)&(m_pHeaderType2.BoxSize[0]));
-  m_pHeaderType2.Omega0[0] = doubleSwap((char*)(&m_pHeaderType2.Omega0[0]));
-  m_pHeaderType2.OmegaLambda[0] = doubleSwap((char*)(&m_pHeaderType2.OmegaLambda[0]));
-  m_pHeaderType2.HubbleParam[0] = doubleSwap((char*)(&m_pHeaderType2.HubbleParam[0]));
-  m_pHeaderType2.FlagAge[0] = intSwap((char*)(&m_pHeaderType2.FlagAge[0]));
-  m_pHeaderType2.FlagMetals[0] = intSwap((char*)(&m_pHeaderType2.FlagMetals[0]));
+  m_pHeaderType2[0].foling[0] = intSwap((char*)(&m_pHeaderType2[0].foling[0]));
+  m_pHeaderType2[0].num_files[0] = intSwap((char*)(&m_pHeaderType2[0].num_files[0]));
+  m_pHeaderType2[0].BoxSize[0] = doubleSwap((char*)&(m_pHeaderType2[0].BoxSize[0]));
+  m_pHeaderType2[0].Omega0[0] = doubleSwap((char*)(&m_pHeaderType2[0].Omega0[0]));
+  m_pHeaderType2[0].OmegaLambda[0] = doubleSwap((char*)(&m_pHeaderType2[0].OmegaLambda[0]));
+  m_pHeaderType2[0].HubbleParam[0] = doubleSwap((char*)(&m_pHeaderType2[0].HubbleParam[0]));
+  m_pHeaderType2[0].FlagAge[0] = intSwap((char*)(&m_pHeaderType2[0].FlagAge[0]));
+  m_pHeaderType2[0].FlagMetals[0] = intSwap((char*)(&m_pHeaderType2[0].FlagMetals[0]));
 	  
   for (int i=0; i<6; i++)
-    m_pHeaderType2.NallWH[i] = intSwap((char*)(&m_pHeaderType2.NallWH[i]));
+    m_pHeaderType2[0].NallWH[i] = intSwap((char*)(&m_pHeaderType2[0].NallWH[i]));
    
-  m_pHeaderType2.flag_entr_ics[0] = intSwap((char*)(&m_pHeaderType2.flag_entr_ics[0]));
+  m_pHeaderType2[0].flag_entr_ics[0] = intSwap((char*)(&m_pHeaderType2[0].flag_entr_ics[0]));
    
   char fill[256- 6*sizeof(int)- 6*sizeof(double)- 2*sizeof(double)- 2*sizeof(int)- 6*sizeof(int)- 2*sizeof(int)- 
       4*sizeof(double)- 9*sizeof(int)]; /* fills to 256 Bytes */
-  m_pHeaderType2.final_boh[0] = intSwap((char*)(&m_pHeaderType2.final_boh[0]));
-  m_pHeaderType2.final_nBlock[0] = intSwap((char*)(&m_pHeaderType2.final_nBlock[0]));
+  m_pHeaderType2[0].final_boh[0] = intSwap((char*)(&m_pHeaderType2[0].final_boh[0]));
+  m_pHeaderType2[0].final_nBlock[0] = intSwap((char*)(&m_pHeaderType2[0].final_nBlock[0]));
   
   char tagFirstBlock[4];
-  m_pHeaderType2.first_boh[0] = intSwap((char*)(&m_pHeaderType2.first_boh[0]));
-  m_pHeaderType2.first_nBlock[0] = intSwap((char*)(&m_pHeaderType2.first_nBlock[0]));
-  m_pHeaderType2.sizeFirstBlock[0] = intSwap((char*)(&m_pHeaderType2.sizeFirstBlock[0]));
+  m_pHeaderType2[0].first_boh[0] = intSwap((char*)(&m_pHeaderType2[0].first_boh[0]));
+  m_pHeaderType2[0].first_nBlock[0] = intSwap((char*)(&m_pHeaderType2[0].first_nBlock[0]));
+  m_pHeaderType2[0].sizeFirstBlock[0] = intSwap((char*)(&m_pHeaderType2[0].sizeFirstBlock[0]));
 }
 
   //--------------------------------------
@@ -1364,7 +496,7 @@ void GadgetSource::swapHeaderType2()
    
   char fill[256- 6*sizeof(int)- 6*sizeof(double)- 2*sizeof(double)- 2*sizeof(int)- 6*sizeof(int)- 2*sizeof(int)- 
       4*sizeof(double)- 9*sizeof(int)]; /* fills to 256 Bytes */
-  m_pHeaderType1.final_boh[0] = intSwap((char*)(&m_pHeaderType1.final_boh[0]));
+  //m_pHeaderType1.final_boh[0] = intSwap((char*)(&m_pHeaderType1.final_boh[0]));
   m_pHeaderType1.sizeFirstBlock[0] = intSwap((char*)(&m_pHeaderType1.sizeFirstBlock[0]));
    
 }
