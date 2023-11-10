@@ -1,4 +1,4 @@
- 
+
 
 /***************************************************************************
  *   Copyright (C) 2008 by Gabriella Caniglia *
@@ -25,55 +25,68 @@
 #include <cstdlib>
 #include <cstring>
 
-
-
 #include "optionssetter.h"
 #include "vtkGraphicsFactory.h"
 //#include "vtkImagingFactory.h"
 
+#include <mpi.h>
 
 int main(int argc, char*argv[])
 {
-  vtkGraphicsFactory::SetOffScreenOnlyMode( 1);
-  vtkGraphicsFactory::SetUseMesaClasses( 1 );
-  /*vtk9 migration
-  //vtkImagingFactory::SetUseMesaClasses( 1 );
-*/
-  OptionsSetter *pOptSett= new OptionsSetter;
     
-  if(argc<2)
-{ 
-    pOptSett ->showHelp();
-    return 1;
+    int rank, size;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    
+    // Get the name of the processor
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+    
+    // Print off a hello world message
+    printf("Hello world from processor %s, rank %d out of %d processors\n",
+           processor_name, rank, size);
+    
+    vtkGraphicsFactory::SetOffScreenOnlyMode( 1);
+    vtkGraphicsFactory::SetUseMesaClasses( 1 );
+    
+    
+    OptionsSetter *pOptSett= new OptionsSetter();
+    
+    if(argc<2)
+    {
+        pOptSett ->showHelp();
+        return 1;
+    }
+    
+    
+    std::vector<std::string> args;
+    //   copy program arguments into vector
+    int i;
+    
+    for (i=1;i<argc;i++)
+        args.push_back(argv[i]);
+    if(pOptSett->parseOption(args)!=0)
+    {
+        std::cerr<<"Invalid arguments. Operation Aborted."<<std::endl;
+        return -1;
+    }
+    
+    VisIVOServerOptions opt=pOptSett->returnOptions();
+    
+    pOptSett->readData();
+    pOptSett->images();
+    
+    pOptSett->writeHistory();
+    
+    if ( pOptSett!=0)
+        delete pOptSett ;
+    
+    
+    //    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
+    
+    return 0;
 }
 
-
-  std::vector<std::string> args;
-//   copy program arguments into vector
-  int i;
-
-  for (i=1;i<argc;i++) 
-    args.push_back(argv[i]);
-/*  for (i=0;i<args.size();i++) 
-  std::clog << " " << args[i];
-  std::clog <<" args.size()="<<args.size()<<std::endl;
- */
-  if(pOptSett->parseOption(args)!=0)
-  {
-    std::cerr<<"Invalid arguments. Operation Aborted."<<std::endl;
-    return -1;
-  }
-  
-  VisIVOServerOptions opt=pOptSett->returnOptions();
-  
-  pOptSett->readData();
-  pOptSett->images();
-    
-  pOptSett->writeHistory();
-
-  if ( pOptSett!=0)
-    delete pOptSett ;
-  
-  return 0;
-}
-    

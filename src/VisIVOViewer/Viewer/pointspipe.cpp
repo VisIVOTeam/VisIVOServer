@@ -53,6 +53,8 @@
 #include "vtkActor.h"
 #include "vtkAxesActor.h"
 
+#include <mpi.h>
+
 //---------------------------------------------------------------------
 PointsPipe::PointsPipe ( VisIVOServerOptions options)
 //---------------------------------------------------------------------
@@ -105,77 +107,94 @@ void PointsPipe::destroyAll()
 int PointsPipe::createPipe ()
 //------------------------------------------------------------------------------------
 {
+    
+    int rank, size;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     int i = 0;
-    int j = 0;
     std::ifstream inFile;
     
-    vtkFloatArray *radiusArrays =vtkFloatArray::New();
-    vtkFloatArray *xAxis=vtkFloatArray::New();
-    vtkFloatArray *yAxis=vtkFloatArray::New();
-    vtkFloatArray *zAxis=vtkFloatArray::New();
+    vtkFloatArray *radiusArrays = vtkFloatArray::New();
+    vtkFloatArray *xAxis = vtkFloatArray::New();
+    vtkFloatArray *yAxis = vtkFloatArray::New();
+    vtkFloatArray *zAxis = vtkFloatArray::New();
     
     xAxis->SetNumberOfTuples(m_visOpt.nRows);
     yAxis->SetNumberOfTuples(m_visOpt.nRows);
     zAxis->SetNumberOfTuples(m_visOpt.nRows);
     
-    
     xAxis->SetName(m_visOpt.xField.c_str());
     yAxis->SetName(m_visOpt.yField.c_str());
     zAxis->SetName(m_visOpt.zField.c_str());
     
+    int xIndex, yIndex, zIndex;
     
-    int xIndex, yIndex,zIndex;
-    
-    if(m_visOpt.dataRead && m_visOpt.goodAllocation)
+    if (m_visOpt.dataRead && m_visOpt.goodAllocation)
     {
         std::map<std::string, int>::iterator p;
-        for(p=m_visOpt.columns.begin();p!=m_visOpt.columns.end();p++)
+        for (p = m_visOpt.columns.begin(); p != m_visOpt.columns.end(); p++)
         {
-            if(p->first==m_visOpt.xField) xIndex=p->second;
-            if(p->first==m_visOpt.yField) yIndex=p->second;
-            if(p->first==m_visOpt.zField) zIndex=p->second;
+            if (p->first == m_visOpt.xField)
+                xIndex = p->second;
+            if (p->first == m_visOpt.yField)
+                yIndex = p->second;
+            if (p->first == m_visOpt.zField)
+                zIndex = p->second;
         }
-        for(i=0; i<m_visOpt.nRows;i++)
+        
+        // Divide work among MPI processes
+        int startRow = rank * (m_visOpt.nRows / size);
+        int endRow = (rank + 1) * (m_visOpt.nRows / size);
+        
+        for (i = startRow; i < endRow; i++)
         {
-            xAxis->  SetValue(i,m_visOpt.tableData[xIndex][i]); //! this is the row that fill xAxis array
-            yAxis->  SetValue(i,m_visOpt.tableData[yIndex][i]);
-            zAxis->  SetValue(i,m_visOpt.tableData[zIndex][i]);
+            xAxis->SetValue(i, m_visOpt.tableData[xIndex][i]);
+            yAxis->SetValue(i, m_visOpt.tableData[yIndex][i]);
+            zAxis->SetValue(i, m_visOpt.tableData[zIndex][i]);
         }
-    } else
+    }
+    else
     {
-        inFile.open(m_visOpt.path.c_str(), ios::binary); //!open binary file. m_visOpt is the structure (parameter of the constructor) that contain alla data to be visualized
-        // std::clog<<m_visOpt.path.c_str()<<std::endl;
-        if(!inFile.is_open())
+        // Existing code for reading from file
+        inFile.open(m_visOpt.path.c_str(), std::ios::binary);
+        if (!inFile.is_open())
             return -1;
         
         float tmpAxis[1];
         
-        for(i=0; i<m_visOpt.nRows;i++)
+        // Divide work among MPI processes
+        int startRow = rank * (m_visOpt.nRows / size);
+        int endRow = (rank + 1) * (m_visOpt.nRows / size);
+        
+        for (i = startRow; i < endRow; i++)
         {
-            inFile.seekg((m_visOpt.x*m_visOpt.nRows+i )* sizeof(float));
-            
-            inFile.read((char *)( tmpAxis),sizeof(float));
-            if(m_visOpt.needSwap)
-                tmpAxis[0]=floatSwap((char *)(&tmpAxis[0]));
-            
-            xAxis->  SetValue(i,tmpAxis[0]); //! this is the row that fill xAxis array
-            
-            inFile.seekg((m_visOpt.y*m_visOpt.nRows+ i)* sizeof(float));
-            inFile.read((char *)( tmpAxis),  sizeof(float));
-            if(m_visOpt.needSwap)
-                tmpAxis[0]=floatSwap((char *)(&tmpAxis[0]));
-            
-            yAxis->  SetValue(i,tmpAxis[0]);
-            
-            inFile.seekg((m_visOpt.z*m_visOpt.nRows+ i)* sizeof(float));
+            inFile.seekg((m_visOpt.x * m_visOpt.nRows + i) * sizeof(float));
             inFile.read((char *)(tmpAxis), sizeof(float));
-            if(m_visOpt.needSwap)
-                tmpAxis[0]=floatSwap((char *)(&tmpAxis[0]));
+            if (m_visOpt.needSwap)
+                tmpAxis[0] = floatSwap((char *)(&tmpAxis[0]));
             
-            zAxis->  SetValue(i,tmpAxis[0]);
+            xAxis->SetValue(i, tmpAxis[0]);
             
+            inFile.seekg((m_visOpt.y * m_visOpt.nRows + i) * sizeof(float));
+            inFile.read((char *)(tmpAxis), sizeof(float));
+            if (m_visOpt.needSwap)
+                tmpAxis[0] = floatSwap((char *)(&tmpAxis[0]));
+            
+            yAxis->SetValue(i, tmpAxis[0]);
+            
+            inFile.seekg((m_visOpt.z * m_visOpt.nRows + i) * sizeof(float));
+            inFile.read((char *)(tmpAxis), sizeof(float));
+            if (m_visOpt.needSwap)
+                tmpAxis[0] = floatSwap((char *)(&tmpAxis[0]));
+            
+            zAxis->SetValue(i, tmpAxis[0]);
         }
-    } //else
+        
+        inFile.close();
+    }
+    //else
     
     xAxis->GetRange(m_xRange);  //!minimum and maximum value
     yAxis->GetRange(m_yRange);  //!minimum and maximum value
@@ -209,7 +228,7 @@ int PointsPipe::createPipe ()
     xAxis->Delete();
     yAxis->Delete();
     zAxis->Delete();
-        
+    
     float tmp[1];
     
     if(m_visOpt.radiusscalar!="none"&& m_visOpt.scaleGlyphs!="none"&& m_visOpt.nGlyphs!=0 )
@@ -342,11 +361,9 @@ int PointsPipe::createPipe ()
     }
     
     inFile.close();
-    
-    
-    
+        
     setBoundingBox (m_polyData  );
-
+    
     m_pConeMapper->SetInputData (m_polyData );
     m_pConeActor->SetMapper ( m_pConeMapper );
     
@@ -467,12 +484,13 @@ int PointsPipe::createPipe ()
     //-----------------------------------
     inter->Start();
     inter->ExitEvent();
-    //-----------------------------------    
+    //-----------------------------------
     if(inter!=0)
         inter->Delete();
     if(newVerts!=0)
         newVerts->Delete();
     radiusArrays->Delete();
+       
     return 0;
 }
 
@@ -707,49 +725,49 @@ bool PointsPipe::SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatAr
         {
             float inPoint[3];
             float outPoint[3];
-      inPoint[0] = outPoint[0] = xField->GetValue(i) * scalingFactorsInv[0];
-      inPoint[1] = outPoint[1] = yField->GetValue(i) * scalingFactorsInv[1];
-      inPoint[2] = outPoint[2] = zField->GetValue(i) * scalingFactorsInv[2];
-
-      m_points->SetPoint(i,outPoint);
+            inPoint[0] = outPoint[0] = xField->GetValue(i) * scalingFactorsInv[0];
+            inPoint[1] = outPoint[1] = yField->GetValue(i) * scalingFactorsInv[1];
+            inPoint[2] = outPoint[2] = zField->GetValue(i) * scalingFactorsInv[2];
+            
+            m_points->SetPoint(i,outPoint);
+        }
     }
-  }
-  else
-    for(i = 0; i < m_visOpt.nRows; i++)
-  {
-    float outPoint[3];
+    else
+        for(i = 0; i < m_visOpt.nRows; i++)
+        {
+            float outPoint[3];
+            
+            outPoint[0] = xField->GetValue(i) ;
+            outPoint[1] = yField->GetValue(i) ;
+            outPoint[2] = zField->GetValue(i) ;
+            
+            m_points->SetPoint(i,outPoint);
+        }
     
-    outPoint[0] = xField->GetValue(i) ;
-    outPoint[1] = yField->GetValue(i) ;
-    outPoint[2] = zField->GetValue(i) ;
-
-    m_points->SetPoint(i,outPoint);
-  }
-  
-  return true;
+    return true;
 }
 
 //---------------------------------------------------------------------
 void PointsPipe::setScaling ()
 //---------------------------------------------------------------------
 {
-  m_glyphFilter->SetUseSecondScalar(true);
-  m_glyphFilter->SetUseThirdScalar(true);
-  
-  m_glyphFilter->SetScaling(1);
-  
-  if( m_visOpt.heightscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0 && m_visOpt.nGlyphs!=1)
-    m_glyphFilter->SetInputScalarsSelectionY(m_visOpt.heightscalar.c_str());
-      
-  if( m_visOpt.radiusscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0)  
-    m_glyphFilter->SetInputScalarsSelectionXZ(m_visOpt.heightscalar.c_str());
- 
-  
-  if( m_visOpt.nGlyphs!=0)
-    m_glyphFilter->SetScaleModeToScaleByScalar();
-  else 
-    m_glyphFilter->ScalarVisibilityOff();
+    m_glyphFilter->SetUseSecondScalar(true);
+    m_glyphFilter->SetUseThirdScalar(true);
     
-
+    m_glyphFilter->SetScaling(1);
+    
+    if( m_visOpt.heightscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0 && m_visOpt.nGlyphs!=1)
+        m_glyphFilter->SetInputScalarsSelectionY(m_visOpt.heightscalar.c_str());
+    
+    if( m_visOpt.radiusscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0)
+        m_glyphFilter->SetInputScalarsSelectionXZ(m_visOpt.heightscalar.c_str());
+    
+    
+    if( m_visOpt.nGlyphs!=0)
+        m_glyphFilter->SetScaleModeToScaleByScalar();
+    else
+        m_glyphFilter->ScalarVisibilityOff();
+    
+    
 }
 
