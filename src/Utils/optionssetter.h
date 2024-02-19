@@ -45,7 +45,8 @@ struct VisIVOServerOptions
   int vx,vy,vz;//!colums number associated to each vectore axes
   int spr,spI,spC1,spC2,spC3;//!colums number associated used in splotch
   int hsml,spColor,spIntensity;//!colums number associated used in splotch
-  int nRows, nCols;//!numeber of rows and colums 
+  unsigned long long int nRows;
+  int nCols;//!numeber of rows and colums 
   int nRadius, nHeight,nColorScalar,nVRenderingField ,nSlicePlane,
   nIsosurfaceField;//!colums number associated to radius scaling,hiegth scaling, lut, rendering, slice and isosurface 
   int nGlyphs,nColorTable;//!set the number of glyphs and luttable 
