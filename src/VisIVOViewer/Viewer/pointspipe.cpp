@@ -167,8 +167,6 @@ int PointsPipe::createPipe ()
             zAxis->  SetValue(c,tmpAxis[c]);
         }
         
-        
-        
         // SetXYZ(xAxis,yAxis,zAxis);
         m_points=vtkPoints::New();
         m_points->SetNumberOfPoints(chunk);
@@ -193,7 +191,11 @@ int PointsPipe::createPipe ()
         m_polyData->SetVerts ( newVerts );
        
         polyDataList.push_back(m_polyData);
+        
         m_points->Delete();
+        xAxis->Delete();
+        yAxis->Delete();
+        zAxis->Delete();
        // break;
     }
     
