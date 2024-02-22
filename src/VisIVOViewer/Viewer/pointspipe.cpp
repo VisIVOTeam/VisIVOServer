@@ -182,7 +182,6 @@ int PointsPipe::createPipe ()
             outPoint[2] = zAxis->GetValue(j) ;
             
             m_points->SetPoint(j,outPoint);
-            
             newVerts->InsertNextCell(1);
             newVerts->InsertCellPoint ( j );
         }
@@ -202,29 +201,12 @@ int PointsPipe::createPipe ()
     inFile.close();
     
     // connect m_pRendererderer and m_pRendererder window and configure m_pRendererder window
-    m_pRenderWindow->AddRenderer ( m_pRenderer );
+    //m_pRenderWindow->AddRenderer ( m_pRenderer );
     
    
-    vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-
-    for (auto polyData : polyDataList) {
-      appendFilter->AddInputData(polyData);
-    }
-
-    appendFilter->Update();
-
-    
-    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-       mapper->SetInputData(appendFilter->GetOutput()); // Otteniamo l'output dell'append
-     
-    // Visualizza il PolyData combinato
-    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-    actor->SetMapper(mapper);
-
-    // Aggiungi l'attore alla scena
+   /* vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+*/
     vtkRenderer* renderer = vtkRenderer::New();
-    renderer->AddActor(actor);
-
     // Visualizza la scena
     vtkRenderWindow* renderWindow = vtkRenderWindow::New();
     renderWindow->AddRenderer(renderer);
@@ -232,9 +214,20 @@ int PointsPipe::createPipe ()
     vtkRenderWindowInteractor* renderWindowInteractor = vtkRenderWindowInteractor::New();
     renderWindowInteractor->SetRenderWindow(renderWindow);
 
+
+    
+    for (auto polyData : polyDataList) {
+  //    appendFilter->AddInputData(polyData);
+        vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+           mapper->SetInputData(polyData); // Otteniamo l'output dell'append
+        // Visualizza il PolyData combinato
+        vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+        actor->SetMapper(mapper);
+        renderer->AddActor(actor);
+    }
+    
     renderWindow->Render();
     renderWindowInteractor->Start();
-    
 }
 
 
@@ -246,12 +239,6 @@ void PointsPipe::setGlyphs ( )
     
     if ( m_visOpt.nRows<max )
     {
-        /* VTK9 migration
-         m_glyph->SetInput (m_polyData );
-         replaced
-         m_glyph->SetInputData (m_polyData );
-         
-         */
         m_glyph->SetInputData (m_polyData );
         
         
