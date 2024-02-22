@@ -279,14 +279,14 @@ bool OptionsSetter::readSplocthColumn()
     m_vServer.spC3Field= params.find<std::string>("C3_col","none");
     
     
-
+    
     std::istringstream is(params.find<std::string>("autocalc_cam","false"));
     bool b;
     is >> std::boolalpha >> b;
     
     m_vServer.autocalcCam= b;
-
-
+    
+    
     if(m_vServer.colorScalar=="none")
         m_vServer.colorScalar=m_vServer.spC1Field;
     
@@ -298,69 +298,69 @@ bool OptionsSetter::readSplocthColumn()
 int OptionsSetter::readData ( )
 //---------------------------------------------------------------------
 {
-	if(!m_vServer.dataRead)
-		return -1;
-  	std::ifstream inFile;
-  	inFile.open(m_vServer.path.c_str(), ios::binary);
-  	if(!inFile)
-	{
-		std::cerr<<"Error: binary data does not exist"<<std::endl;
+    if(!m_vServer.dataRead)
         return -1;
-	}
+    std::ifstream inFile;
+    inFile.open(m_vServer.path.c_str(), ios::binary);
+    if(!inFile)
+    {
+        std::cerr<<"Error: binary data does not exist"<<std::endl;
+        return -1;
+    }
     
-	std::map<std::string, int>::iterator p;
-	std::map<std::string, int> colNames;
+    std::map<std::string, int>::iterator p;
+    std::map<std::string, int> colNames;
     
-	if(m_vServer.xField!="none")
-		colNames.insert(make_pair(m_vServer.xField,0));
-	if(m_vServer.yField!="none")
-		colNames.insert(make_pair(m_vServer.yField,0));
-	if(m_vServer.zField!="none")
-		colNames.insert(make_pair(m_vServer.zField,0));
-	if(m_vServer.xVectorField!="none")
-		colNames.insert(make_pair(m_vServer.xVectorField,0));
-	if(m_vServer.yVectorField!="none")
-		colNames.insert(make_pair(m_vServer.yVectorField,0));
-	if(m_vServer.zVectorField!="none")
-		colNames.insert(make_pair(m_vServer.zVectorField,0));
-	if(m_vServer.colorScalar!="none")
-		colNames.insert(make_pair(m_vServer.colorScalar,0));
-	if(m_vServer.radiusscalar!="none")
-		colNames.insert(make_pair(m_vServer.radiusscalar,0));
-	if(m_vServer.heightscalar!="none")
-		colNames.insert(make_pair(m_vServer.heightscalar,0));
-	if(m_vServer.vRenderingField!="none")
-		colNames.insert(make_pair(m_vServer.vRenderingField,0));
-	if(m_vServer.sliceField!="none")
-		colNames.insert(make_pair(m_vServer.sliceField,0));
-	if(m_vServer.isosurfaceField!="none")
-		colNames.insert(make_pair(m_vServer.isosurfaceField,0));
-	if(m_vServer.hsmlField!="none")
-		colNames.insert(make_pair(m_vServer.hsmlField,0));
-	if(m_vServer.spColorField!="none")
-		colNames.insert(make_pair(m_vServer.spColorField,0));
-	if(m_vServer.spIntensityField!="none")
-		colNames.insert(make_pair(m_vServer.spIntensityField,0));
-	if(m_vServer.sprField!="none")
-		colNames.insert(make_pair(m_vServer.sprField,0));
-	if(m_vServer.spIField!="none")
-		colNames.insert(make_pair(m_vServer.spIField,0));
-	if(m_vServer.spC1Field!="none")
-		colNames.insert(make_pair(m_vServer.spC1Field,0));
-	if(m_vServer.spC2Field!="none")
-		colNames.insert(make_pair(m_vServer.spC2Field,0));
-	if(m_vServer.spC3Field!="none")
-		colNames.insert(make_pair(m_vServer.spC3Field,0));
+    if(m_vServer.xField!="none")
+        colNames.insert(make_pair(m_vServer.xField,0));
+    if(m_vServer.yField!="none")
+        colNames.insert(make_pair(m_vServer.yField,0));
+    if(m_vServer.zField!="none")
+        colNames.insert(make_pair(m_vServer.zField,0));
+    if(m_vServer.xVectorField!="none")
+        colNames.insert(make_pair(m_vServer.xVectorField,0));
+    if(m_vServer.yVectorField!="none")
+        colNames.insert(make_pair(m_vServer.yVectorField,0));
+    if(m_vServer.zVectorField!="none")
+        colNames.insert(make_pair(m_vServer.zVectorField,0));
+    if(m_vServer.colorScalar!="none")
+        colNames.insert(make_pair(m_vServer.colorScalar,0));
+    if(m_vServer.radiusscalar!="none")
+        colNames.insert(make_pair(m_vServer.radiusscalar,0));
+    if(m_vServer.heightscalar!="none")
+        colNames.insert(make_pair(m_vServer.heightscalar,0));
+    if(m_vServer.vRenderingField!="none")
+        colNames.insert(make_pair(m_vServer.vRenderingField,0));
+    if(m_vServer.sliceField!="none")
+        colNames.insert(make_pair(m_vServer.sliceField,0));
+    if(m_vServer.isosurfaceField!="none")
+        colNames.insert(make_pair(m_vServer.isosurfaceField,0));
+    if(m_vServer.hsmlField!="none")
+        colNames.insert(make_pair(m_vServer.hsmlField,0));
+    if(m_vServer.spColorField!="none")
+        colNames.insert(make_pair(m_vServer.spColorField,0));
+    if(m_vServer.spIntensityField!="none")
+        colNames.insert(make_pair(m_vServer.spIntensityField,0));
+    if(m_vServer.sprField!="none")
+        colNames.insert(make_pair(m_vServer.sprField,0));
+    if(m_vServer.spIField!="none")
+        colNames.insert(make_pair(m_vServer.spIField,0));
+    if(m_vServer.spC1Field!="none")
+        colNames.insert(make_pair(m_vServer.spC1Field,0));
+    if(m_vServer.spC2Field!="none")
+        colNames.insert(make_pair(m_vServer.spC2Field,0));
+    if(m_vServer.spC3Field!="none")
+        colNames.insert(make_pair(m_vServer.spC3Field,0));
     
-	if(colNames.size()*m_vServer.nRows>MAX_ELEMENT_TO_LOAD)
-		return -1;
+    if(colNames.size()*m_vServer.nRows>MAX_ELEMENT_TO_LOAD)
+        return -1;
     
     m_vServer.tableData= new float*[colNames.size()];
-	m_vServer.goodAllocation=true;
-	int i=-1;
-	for(p=colNames.begin();p!=colNames.end();p++)
-	{
-		i++;
+    m_vServer.goodAllocation=true;
+    int i=-1;
+    for(p=colNames.begin();p!=colNames.end();p++)
+    {
+        i++;
         try
         {
             m_vServer.tableData[i]=new  float[m_vServer.nRows];
@@ -369,7 +369,7 @@ int OptionsSetter::readData ( )
         {
             m_vServer.tableData[i]=NULL;
         }
-		if(m_vServer.tableData[i]==NULL)
+        if(m_vServer.tableData[i]==NULL)
         {
             for(unsigned int j=0;j<i;j++)
                 delete [] m_vServer.tableData[j];
@@ -377,37 +377,37 @@ int OptionsSetter::readData ( )
             m_vServer.goodAllocation=false;
             return -1;
         }
-		int numOfCol=-1;
-		for(int k=0;k<m_vServer.fieldNames.size();k++)
-		{
-			if(m_vServer.fieldNames[k]==p->first)
-				numOfCol=k;
-		}
+        int numOfCol=-1;
+        for(int k=0;k<m_vServer.fieldNames.size();k++)
+        {
+            if(m_vServer.fieldNames[k]==p->first)
+                numOfCol=k;
+        }
         if(numOfCol>=0)
-		{
+        {
             
-		} else
-		{
-			std::cerr<<"Severe Warning: wrong read of data, "<< p->first<<" is not in the in table. No data will be pre read. Error can occur."<<std::endl;
-			for(unsigned int j=0;j<i;j++)
-				delete [] m_vServer.tableData[j];
-			delete [] m_vServer.tableData;
-			m_vServer.goodAllocation=false;
-			return -1;
-		}
-		inFile.seekg(numOfCol * m_vServer.nRows* sizeof(float),std::ios::beg);
-		inFile.read((char *)(m_vServer.tableData[i]),  sizeof(float)* m_vServer.nRows);
-		m_vServer.columns.insert(make_pair(p->first,i));
-	}
+        } else
+        {
+            std::cerr<<"Severe Warning: wrong read of data, "<< p->first<<" is not in the in table. No data will be pre read. Error can occur."<<std::endl;
+            for(unsigned int j=0;j<i;j++)
+                delete [] m_vServer.tableData[j];
+            delete [] m_vServer.tableData;
+            m_vServer.goodAllocation=false;
+            return -1;
+        }
+        inFile.seekg(numOfCol * m_vServer.nRows* sizeof(float),std::ios::beg);
+        inFile.read((char *)(m_vServer.tableData[i]),  sizeof(float)* m_vServer.nRows);
+        m_vServer.columns.insert(make_pair(p->first,i));
+    }
     // 	for(p=m_vServer.columns.begin();p!=m_vServer.columns.end();p++)
     // 		std::clog<<"mappa "<<p->first<<" " <<p->second<<std::endl;
     // swap float!
-	if(m_vServer.needSwap)
-	{
-		for(int i=0;i<colNames.size();i++)
-			for(int j=0;j<m_vServer.nRows;j++)
+    if(m_vServer.needSwap)
+    {
+        for(int i=0;i<colNames.size();i++)
+            for(int j=0;j<m_vServer.nRows;j++)
                 m_vServer.tableData[i][j]=floatSwap((char *)(&m_vServer.tableData[i][j]));
-	}
+    }
     
     return 0;
 }
@@ -487,7 +487,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.cycleOffset;//add number to the stream
-
+            
             viewParameter["cycleoffset"]=ss.str();
         }
         //m_vServer.cycleOffset=params.find<int>("cycleoffset",0);
@@ -497,7 +497,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             
             std::stringstream ss;//create a stringstream
             ss << m_vServer.cycleSkipFrom;//add number to the stream
-
+            
             viewParameter["cycle_skip_from"]=ss.str();
         }
         
@@ -517,7 +517,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             
             std::stringstream ss;//create a stringstream
             ss << m_vServer.colorRangeTo;//add number to the stream
-
+            
             
             viewParameter["colorrangeto"]=ss.str();
         }
@@ -529,7 +529,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             
             std::stringstream ss;//create a stringstream
             ss << m_vServer.colorRangeFrom;//add number to the stream
-
+            
             viewParameter["colorrangefrom"]=ss.str();
         }
         
@@ -550,7 +550,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.anaglyphsat;//add number to the stream
-
+            
             viewParameter["anaglyphsat"]=ss.str();
         }
         
@@ -732,14 +732,14 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         m_vServer.scale=params.find<std::string>("scale","none");
         if(params.param_present("scale"))
             viewParameter["scale"]="yes";
-            
-
+        
+        
         
         m_vServer.vRendering=params.find<std::string>("vrendering","none");
         if(params.param_present("vrendering"))
             viewParameter["vrendering"]="yes";
-            
-    
+        
+        
         
         m_vServer.slice=params.find<std::string>("slice","none");
         if(m_vServer.slice=="yes")
@@ -780,14 +780,14 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.isosurfaceValue;//add number to the stream
-
+            
             viewParameter["isosurfacevalue"]=ss.str();
         }
         
         m_vServer.slicePlane=params.find<std::string>("sliceplane","none");
         if(params.param_present("sliceplane"))
             viewParameter["sliceplane"]=m_vServer.slicePlane;
-            
+        
         
         
         
@@ -796,7 +796,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.slicePosition;//add number to the stream
-
+            
             viewParameter["sliceposition"]= ss.str();
         }
         
@@ -831,7 +831,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             
             std::stringstream ss;//create a stringstream
             ss << m_vServer.fov;//add number to the stream
-
+            
             viewParameter["camfov"]=ss.str();
         }
         
@@ -840,7 +840,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.elevation;//add number to the stream
-
+            
             viewParameter["camelev"]= ss.str();
             
         }
@@ -850,7 +850,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.zoom;//add number to the stream
-
+            
             viewParameter["zoom"]=ss.str();
             
         }
@@ -897,7 +897,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             
             std::stringstream ss;//create a stringstream
             ss << m_vServer.cameraRoll;//add number to the stream
-
+            
             viewParameter["camroll"]=ss.str();
             
         }
@@ -940,7 +940,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.opacity;//add number to the stream
-
+            
             viewParameter["opacity"]=ss.str();
         }
         m_vServer.uselogscale=params.find<std::string>("logscale","none");
@@ -955,7 +955,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         
         
         m_vServer.scaleGlyphs=params.find<std::string>("scaleglyphs","none");
-
+        
         if (m_vServer.scaleGlyphs != "yes")
         {
             m_vServer.scaleGlyphs= "none";
@@ -967,7 +967,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.radius;//add number to the stream
-
+            
             viewParameter["radius"]= ss.str();
         }
         
@@ -980,7 +980,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.height;//add number to the stream
-
+            
             viewParameter["height"]= ss.str();
         }
         
@@ -993,7 +993,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         {
             std::stringstream ss;//create a stringstream
             ss << m_vServer.vectorScalingFactor;//add number to the stream
-
+            
             viewParameter["vectorscalefactor"]=m_vServer.vectorScalingFactor;
         }
         m_vServer.vectorScale=params.find<int>("vectorscale",-1);
@@ -1003,7 +1003,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             ss << m_vServer.vectorScale;//add number to the stream
             
             viewParameter["vectorscale"]= ss.str();
-
+            
         }
         
         m_vServer.vtkImage=params.find<std::string>("vtkimage","none");
@@ -1045,17 +1045,17 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         m_vServer.mode=params.find<std::string>("mode","none");
         if(params.param_present("mode"))
             viewParameter["mode"]=m_vServer.mode;
-
+        
         m_vServer.scenario=params.find<std::string>("scenario","etna");
         if(params.param_present("scenario"))
             viewParameter["scenario"]=m_vServer.scenario;
-
+        
         
         std::string strOpacityTF;
         strOpacityTF=params.find<std::string>("opacityTF","5 3 2.5");
         if(params.param_present("opacityTF"))
             viewParameter["opacityTF"]=strOpacityTF;
-
+        
         
         std::stringstream ssOpacityTT(strOpacityTF);
         int countTF=0;
@@ -1073,7 +1073,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             m_vServer.cliprange[1]=1.0e+13;
             m_vServer.clipset=true;
             viewParameter["cliplarge"]="yes";
-
+            
         }
         tmp="none";
         m_vServer.clipset=params.param_present("cliprange");
@@ -1081,7 +1081,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
         
         if(params.param_present("cliprange"))
             viewParameter["cliprange"]=tmp;
-
+        
         std::stringstream sstmp(tmp);
         int countcr=0;
         while(!sstmp.eof())
@@ -1742,12 +1742,12 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
                 total<<ck1Input;
                 camposStr.append(ck1Input);
                 camposStr.append(" ");
-
+                
                 total>> m_vServer.cameraPos[0];
-
-             //   total>>m_vServer.cameraPos[0];
-               // total.str("");
-
+                
+                //   total>>m_vServer.cameraPos[0];
+                // total.str("");
+                
                 //total.clear();
                 total.str("");
                 
@@ -1755,20 +1755,20 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
                 
                 camposStr.append(ck2Input);
                 camposStr.append(" ");
-
+                
                 total>> m_vServer.cameraPos[1];
-
+                
                 //total>>m_vServer.cameraPos[1];
                 //total.clear();
                 total.str("");
-
+                
                 
                 total<<ck3Input;
                 camposStr.append(ck3Input);
                 total>>m_vServer.cameraPos[2];
-
+                
                 //total<<arguments[i+3];
-               // camposStr.append(total.str());
+                // camposStr.append(total.str());
                 //total>>m_vServer.cameraPos[2];
                 
                 i=i+3;
@@ -2134,7 +2134,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
             {
                 m_vServer.path=arguments[++i];
                 fileIsAtTheEnd=false;
- 
+                
             }
             
             
@@ -2324,7 +2324,7 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
     if(m_vServer.isColorRangeTo && m_vServer.isColorRangeFrom)
         if(m_vServer.colorRangeTo<m_vServer.colorRangeFrom)
         {
-		std:cerr<<"Invalid parameters colorrangeto and  colorrangefrom "<<std::endl;
+        std:cerr<<"Invalid parameters colorrangeto and  colorrangefrom "<<std::endl;
             m_vServer.isColorRangeTo=false;
             m_vServer.isColorRangeFrom=false;
         }
@@ -3579,7 +3579,7 @@ int OptionsSetter::images()
         if(!m_vServer.cycle)
             m_vServer.numImageToLoad=1;
         if(m_vServer.cycle && (m_vServer.cycleSkipFrom>=0 && m_vServer.cycleSkipTo >m_vServer.cycleSkipFrom))
-			countCycle=m_vServer.cycleSkipFrom;
+            countCycle=m_vServer.cycleSkipFrom;
         for(int i=0;i<m_vServer.numImageToLoad;i++)
         {
             if(m_vServer.cycle)
@@ -3909,16 +3909,16 @@ void OptionsSetter::readCycleFile()
 
 //---------------------------
 {
-	std::ifstream inFile;
-	double camPathValue[7];
-	inFile.open(m_vServer.cycleFile.c_str());
-	if(!inFile)
-	{
-		std::cerr<<"Cannot open cycle file."<<std::endl;
-		return ;
-	}
-	if(m_vServer.slice=="yes")
-	{
+    std::ifstream inFile;
+    double camPathValue[7];
+    inFile.open(m_vServer.cycleFile.c_str());
+    if(!inFile)
+    {
+        std::cerr<<"Cannot open cycle file."<<std::endl;
+        return ;
+    }
+    if(m_vServer.slice=="yes")
+    {
         if(m_vServer.sliceOrthoNormal)
         {  
             int previousValue=INVALID_READ;
@@ -3968,7 +3968,7 @@ void OptionsSetter::readCycleFile()
             
         }
         
-	}else{
+    }else{
         
         int fileType=-1;
         while(!inFile.eof())
@@ -3979,8 +3979,8 @@ void OptionsSetter::readCycleFile()
             //  getline(inFile, tmp); //to remove the carrige return character  (\r) from the last line
             getline(inFile, tmp);
             std::stringstream sstmp(tmp);
-	        std::stringstream sstmpckft(tmp);
-	        std::stringstream sstmpck(tmp);
+            std::stringstream sstmpckft(tmp);
+            std::stringstream sstmpck(tmp);
             std::string tmpck;
             if(fileType==-1)
             {
@@ -4193,7 +4193,7 @@ void OptionsSetter::readCycleFile()
             std::cerr<<"Invalid values in cycle file."<<std::endl;
             return ;
         }
-	}
+    }
 }
 //----------------------------
 bool OptionsSetter::setInternalData(VisIVOViewer *env)
