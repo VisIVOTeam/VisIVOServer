@@ -1,21 +1,21 @@
 /***************************************************************************
  *   Copyright (C) 2008 by Gabriella Caniglia *
  *  gabriella.caniglia@oact.inaf.it *
- *                                                                     	*
+ *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or 	*
- *   (at your option) any later version.                               	*
- *                                                                     	*
- *   This program is distributed in the hope that it will be useful,   	*
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of    	*
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     	*
- *   GNU General Public License for more details.                      	*
- *                                                                     	*
- *   You should have received a copy of the GNU General Public License 	*
- *   along with this program; if not, write to the                     	*
- *   Free Software Foundation, Inc.,                                   	*
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.         	*
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 #include <cstdlib>
 #include <cstring>
@@ -53,6 +53,9 @@
 #include "vtkActor.h"
 #include "vtkAxesActor.h"
 
+#include "vtkAppendPolyData.h"
+#include "vtkPolyDataWriter.h"
+
 //---------------------------------------------------------------------
 PointsPipe::PointsPipe ( VisIVOServerOptions options)
 //---------------------------------------------------------------------
@@ -60,9 +63,9 @@ PointsPipe::PointsPipe ( VisIVOServerOptions options)
     m_visOpt=options;
     constructVTK();
     m_glyphFilter   = ExtendedGlyph3D::New();
-    m_glyph     	= vtkGlyph3D::New();
-    m_pConeActor	= vtkActor::New();
-    m_polyData  	= vtkPolyData::New();
+    m_glyph         = vtkGlyph3D::New();
+    m_pConeActor    = vtkActor::New();
+    m_polyData      = vtkPolyData::New();
     m_pConeMapper   = vtkPolyDataMapper::New();
 }
 //---------------------------------
@@ -107,448 +110,129 @@ int PointsPipe::createPipe ()
     std::ifstream inFile;
     
     vtkFloatArray *radiusArrays =vtkFloatArray::New();
-    vtkFloatArray *xAxis=vtkFloatArray::New();
-    vtkFloatArray *yAxis=vtkFloatArray::New();
-    vtkFloatArray *zAxis=vtkFloatArray::New();
-    
-    xAxis->SetNumberOfTuples(m_visOpt.nRows);
-    yAxis->SetNumberOfTuples(m_visOpt.nRows);
-    zAxis->SetNumberOfTuples(m_visOpt.nRows);
-    
-    xAxis->SetName(m_visOpt.xField.c_str());
-    yAxis->SetName(m_visOpt.yField.c_str());
-    zAxis->SetName(m_visOpt.zField.c_str());
+   
     
     
     unsigned long long int xIndex, yIndex,zIndex;
-    if(m_visOpt.dataRead && m_visOpt.goodAllocation)
+    
+    
+    inFile.open(m_visOpt.path.c_str(), ios::binary); //!open binary file. m_visOpt is the structure (parameter of the constructor) that contain alla data to be visualized
+    // std::clog<<m_visOpt.path.c_str()<<std::endl;
+    if(!inFile.is_open())
+        return -1;
+    
+    unsigned long long int chunk = 10000;
+    if(m_visOpt.nRows < chunk)
+        chunk = m_visOpt.nRows;
+    float tmpAxis[chunk];
+    
+    std::vector<vtkSmartPointer<vtkPolyData>> polyDataList ;
+    for(i=0; i <  m_visOpt.nRows; i= i + chunk)
     {
-        std::map<std::string, int>::iterator p;
-        for(p=m_visOpt.columns.begin();p!=m_visOpt.columns.end();p++)
-        {
-            if(p->first==m_visOpt.xField) xIndex=p->second;
-            if(p->first==m_visOpt.yField) yIndex=p->second;
-            if(p->first==m_visOpt.zField) zIndex=p->second;
+        m_polyData      = vtkPolyData::New();
+        vtkSmartPointer<vtkFloatArray> xAxis = vtkFloatArray::New();
+        vtkSmartPointer<vtkFloatArray> yAxis = vtkFloatArray::New();
+        vtkSmartPointer<vtkFloatArray> zAxis = vtkFloatArray::New();
+        
+        xAxis->SetNumberOfTuples(chunk);
+        yAxis->SetNumberOfTuples(chunk);
+        zAxis->SetNumberOfTuples(chunk);
+        
+        xAxis->SetName(m_visOpt.xField.c_str());
+        yAxis->SetName(m_visOpt.yField.c_str());
+        zAxis->SetName(m_visOpt.zField.c_str());
+        
+        // Leggere i dati dal file per il chunk corrente
+          if (i + chunk > m_visOpt.nRows) {
+            chunk = m_visOpt.nRows - i;
+          }
+        inFile.seekg((m_visOpt.x*m_visOpt.nRows +i)* sizeof(float) );
+        inFile.read((char *)( tmpAxis),chunk*sizeof(float));
+        
+        for(int c = 0; c <= chunk; c++){
+            xAxis->  SetValue(c,tmpAxis[c]); //! this is the row that fill xAxis array
         }
-        for(i=0; i<m_visOpt.nRows;i++)
-        {
-            xAxis->  SetValue(i,m_visOpt.tableData[xIndex][i]); //! this is the row that fill xAxis array
-            yAxis->  SetValue(i,m_visOpt.tableData[yIndex][i]);
-            zAxis->  SetValue(i,m_visOpt.tableData[zIndex][i]);
+        
+        inFile.seekg((m_visOpt.y*m_visOpt.nRows+ i)* sizeof(float));
+        inFile.read((char *)( tmpAxis),  chunk*sizeof(float));
+        
+        
+        for(int c = 0; c <= chunk; c++){
+            yAxis->  SetValue(c,tmpAxis[c]);
         }
-    } else
-    {
-        inFile.open(m_visOpt.path.c_str(), ios::binary); //!open binary file. m_visOpt is the structure (parameter of the constructor) that contain alla data to be visualized
-        // std::clog<<m_visOpt.path.c_str()<<std::endl;
-        if(!inFile.is_open())
-            return -1;
+        inFile.seekg((m_visOpt.z*m_visOpt.nRows+ i)* sizeof(float));
+        inFile.read((char *)(tmpAxis), chunk*sizeof(float));
         
-        int chunk = 10000;
-        if(m_visOpt.nRows < chunk) chunk = m_visOpt.nRows;
-        float tmpAxis[chunk];
-        for(i=0; i < m_visOpt.nRows; i= i + chunk)
-        {
-            if(i + chunk> m_visOpt.nRows) chunk = m_visOpt.nRows - i;
-            inFile.seekg((m_visOpt.x*m_visOpt.nRows +i)* sizeof(float) );
-            
-            inFile.read((char *)( tmpAxis),chunk*sizeof(float));
-            if(m_visOpt.needSwap){
-                for(int c = 0; c < chunk; c++){
-                    tmpAxis[c]=floatSwap((char *)(&tmpAxis[c]));
-                }
-            }
-            
-            for(int c = 0; c < chunk; c++){
-                xAxis->  SetValue(i+c,tmpAxis[c]); //! this is the row that fill xAxis array
-            }
-            
-            inFile.seekg((m_visOpt.y*m_visOpt.nRows+ i)* sizeof(float));
-            inFile.read((char *)( tmpAxis),  chunk*sizeof(float));
-            
-            if(m_visOpt.needSwap){
-                for(int c = 0; c < chunk; c++){
-                    tmpAxis[c]=floatSwap((char *)(&tmpAxis[c]));
-                }
-            }
-            
-            for(int c = 0; c < chunk; c++){
-                yAxis->  SetValue(i+c,tmpAxis[c]);
-            }
-            inFile.seekg((m_visOpt.z*m_visOpt.nRows+ i)* sizeof(float));
-            inFile.read((char *)(tmpAxis), chunk*sizeof(float));
-            if(m_visOpt.needSwap){
-                for(int c = 0; c < chunk; c++){
-                    tmpAxis[c]=floatSwap((char *)(&tmpAxis[c]));
-                }
-            }
-            
-            for(int c = 0; c < chunk; c++){
-                zAxis->  SetValue(i+c,tmpAxis[c]);
-            }
-        }   
-        
-    } //else
-    
-    xAxis->GetRange(m_xRange);  //!minimum and maximum value
-    yAxis->GetRange(m_yRange);  //!minimum and maximum value
-    zAxis->GetRange(m_zRange);  //!minimum and maximum value
-    SetXYZ(xAxis,yAxis,zAxis);  
-    
-    m_polyData->SetPoints(m_points);
-    
-    m_points->Delete();
-    
-    
-    
-    // connect m_pRendererderer and m_pRendererder window and configure m_pRendererder window
-    m_pRenderWindow->AddRenderer ( m_pRenderer );
-    
-    unsigned long long int nPoints = m_polyData->GetNumberOfPoints();
-    
-    vtkCellArray *newVerts = vtkCellArray::New();
-    newVerts->EstimateSize (nPoints,1 );
-    //  newVerts->InsertNextCell ( nPoints );
-    
-    for (i = 0; i < nPoints; i++ )
-    {
-        newVerts->InsertNextCell(1);
-        newVerts->InsertCellPoint ( i );
-    }
-    m_polyData->SetVerts ( newVerts );
-    
-    xAxis->Delete();
-    yAxis->Delete();
-    zAxis->Delete();
-    
-    //   if(m_visOpt.m_xVectorField!="none"&& m_visOpt.m_yVectorField!="none" && m_visOpt.zVectorField!="none")
-    //   {  
-    // 	vtkFloatArray *vectorArrays=vtkFloatArray::New();
-    // 	float vector[3];
-    //	 
-    // 	vectorArrays->SetNumberOfTuples(m_visOpt.nRows);
-    //  
-    //    
-    // 	for (i=0;i<m_visOpt.nRows;i++)
-    // 	{
-    //   	inFile.seekg((m_visOpt.vx*m_visOpt.nRows+ m_visOpt.nRows*i )* sizeof(float));
-    //   	inFile.read((char *)(vector),  sizeof(float));
-    //	 
-    //   	inFile.seekg((m_visOpt.vy*m_visOpt.nRows+ m_visOpt.nRows*i)* sizeof(float));
-    //   	inFile.read((char *)(vector),  sizeof(float));
-    //	 
-    //   	inFile.seekg((m_visOpt.vz*m_visOpt.nRows+ m_visOpt.nRows*i)* sizeof(float));
-    //   	inFile.read((char *)(vector ),  sizeof(float));
-    //   	vectorArrays->  SetTupleValue(i ,vector);
-    //  	 
-    //    
-    // 	}
-    // 	polyData->GetPointData()->SetVectors(vectorArrays);
-    //   }
-    
-    float tmp[1];
-    
-    if(m_visOpt.radiusscalar!="none"&& m_visOpt.scaleGlyphs!="none"&& m_visOpt.nGlyphs!=0 )
-    {
-        if(m_visOpt.color=="none")
-        {    
-            m_visOpt.color="yes";
-            m_visOpt.nColorTable=22; //default is white
-            
-            if(m_visOpt.oneColor=="yellow") m_visOpt.nColorTable=19;  
-            if(m_visOpt.oneColor=="red") m_visOpt.nColorTable=24;  
-            if(m_visOpt.oneColor=="green") m_visOpt.nColorTable=25;  
-            if(m_visOpt.oneColor=="blue") m_visOpt.nColorTable=26;  
-            if(m_visOpt.oneColor=="cyan") m_visOpt.nColorTable=20;  
-            if(m_visOpt.oneColor=="violet") m_visOpt.nColorTable=21;  
-            if(m_visOpt.oneColor=="black") m_visOpt.nColorTable=23;  
-            
-            m_visOpt.colorScalar=m_visOpt.radiusscalar;
-            m_visOpt.showLut=false;
+        for(int c = 0; c <= chunk; c++){
+            zAxis->  SetValue(c,tmpAxis[c]);
         }
-        radiusArrays->SetNumberOfTuples(m_visOpt.nRows);
-        if(m_visOpt.dataRead && m_visOpt.goodAllocation)
-        {
-            int iRadius;	 
-            std::map<std::string, int>::iterator p;
-            for(p=m_visOpt.columns.begin();p!=m_visOpt.columns.end();p++)
-                if(p->first==m_visOpt.radiusscalar) iRadius=p->second;
-            for(i=0; i<m_visOpt.nRows;i++)
-                radiusArrays->  SetValue(i,m_visOpt.tableData[iRadius][i]);
-        } else
-        {
-            for (i=0;i<m_visOpt.nRows;i++)
-            {
-                inFile.seekg((m_visOpt.nRadius * m_visOpt.nRows+i )* sizeof(float));
-                inFile.read((char *)(tmp ),  sizeof(float));
-                
-                if(m_visOpt.needSwap)
-                    tmp[0]=floatSwap((char *)(&tmp[0]));
-                
-                radiusArrays->  SetValue(i,tmp[0]);
-            }
-        }//else
         
         
-        /*	for (i=0;i<m_visOpt.nRows;i++)
-         {
-         inFile.seekg((m_visOpt.nRadius * m_visOpt.nRows+i )* sizeof(float));
-         inFile.read((char *)(tmp ),  sizeof(float));
-         
-         if(m_visOpt.needSwap)
-         tmp[0]=floatSwap((char *)(&tmp[1]));
-         
-         radiusArrays->  SetValue(i,tmp[0]);
-         }*/
-        radiusArrays->SetName(m_visOpt.radiusscalar.c_str());
-        m_polyData->GetPointData()->SetScalars(radiusArrays);   //!adda scalar to vtkpolidata
-        //radiusArrays->Delete();
         
-    }
-    
-    
-    if(m_visOpt.heightscalar!="none"&& m_visOpt.scaleGlyphs!="none"&& m_visOpt.nGlyphs!=0 && m_visOpt.nGlyphs!=1 )
-    {
-        vtkFloatArray *heightArrays = vtkFloatArray::New();
-        heightArrays->SetNumberOfTuples(m_visOpt.nRows);
-        /*	for (i=0;i<m_visOpt.nRows;i++)
-         {
-         inFile.seekg((m_visOpt.nHeight * m_visOpt.nRows+i )* sizeof(float));
-         inFile.read((char *)(tmp ),  sizeof(float));
-         
-         if(m_visOpt.needSwap)
-         tmp[0]=floatSwap((char *)(&tmp[1]));
-         
-         heightArrays->  SetValue(i,tmp[0]);
-         }*/
-        if(m_visOpt.dataRead && m_visOpt.goodAllocation)
-        {
-            int iheight;	 
-            std::map<std::string, int>::iterator p;
-            for(p=m_visOpt.columns.begin();p!=m_visOpt.columns.end();p++)
-                if(p->first==m_visOpt.heightscalar) iheight=p->second;
-            for(i=0; i<m_visOpt.nRows;i++)
-                heightArrays->  SetValue(i,m_visOpt.tableData[iheight][i]);
-        } else
-        {
-            for (i=0;i<m_visOpt.nRows;i++)
-            {
-                inFile.seekg((m_visOpt.nHeight * m_visOpt.nRows+i )* sizeof(float));
-                inFile.read((char *)(tmp ),  sizeof(float));
-                
-                if(m_visOpt.needSwap)
-                    tmp[0]=floatSwap((char *)(&tmp[0]));
-                
-                heightArrays->  SetValue(i,tmp[0]);
-            }
-        }//else
+        // SetXYZ(xAxis,yAxis,zAxis);
+        m_points=vtkPoints::New();
+        m_points->SetNumberOfPoints(chunk);
+        vtkCellArray *newVerts = vtkCellArray::New();
+        newVerts->EstimateSize (chunk,1 );
+
         
-        heightArrays->SetName(m_visOpt.heightscalar.c_str());
-        m_polyData->GetPointData()->SetScalars(heightArrays);
-        heightArrays->Delete();
-    }
-    
-    if(m_visOpt.colorScalar!="none")
-    {
-        vtkFloatArray *lutArrays =vtkFloatArray::New();
-        lutArrays->SetNumberOfTuples(m_visOpt.nRows);
-        /*	for (i=0;i<m_visOpt.nRows;i++)
-         {
-         inFile.seekg((m_visOpt.nColorScalar * m_visOpt.nRows+i )* sizeof(float));
-         inFile.read((char *)(tmp ),  sizeof(float));
-         
-         if(m_visOpt.needSwap)
-         tmp[0]=floatSwap((char *)(&tmp[1]));
-         
-         lutArrays->  SetValue(i,tmp[0]);
-         }*/
-        if(m_visOpt.dataRead && m_visOpt.goodAllocation)
+        float outPoint[3];
+        for(j = 0; j < chunk; j++)
         {
-            unsigned long long int ilut;	 
-            std::map<std::string, int>::iterator p;
-            for(p=m_visOpt.columns.begin();p!=m_visOpt.columns.end();p++)
-                if(p->first==m_visOpt.colorScalar) ilut=p->second;
-            for(i=0; i<m_visOpt.nRows;i++)
-                lutArrays->  SetValue(i,m_visOpt.tableData[ilut][i]);
+            outPoint[0] = xAxis->GetValue(j) ;
+            outPoint[1] = yAxis->GetValue(j) ;
+            outPoint[2] = zAxis->GetValue(j) ;
+            
+            m_points->SetPoint(j,outPoint);
+            
+            newVerts->InsertNextCell(1);
+            newVerts->InsertCellPoint ( j );
         }
-        else
-        {
-            int chunk = 10000;
-            if(m_visOpt.nRows < chunk) chunk = m_visOpt.nRows;
-            float tmpScalar[chunk];
-            for (i=0;i<m_visOpt.nRows;i=i+chunk)
-            {
-                if(i + chunk> m_visOpt.nRows) chunk = m_visOpt.nRows - i;
-                inFile.seekg((m_visOpt.nColorScalar * m_visOpt.nRows+i )* sizeof(float));
-                inFile.read((char *)(tmpScalar),  chunk*sizeof(float));
                 
-                if(m_visOpt.needSwap){
-                    for(int c = 0; c < chunk; c++){
-                        tmpScalar[c]=floatSwap((char *)(&tmpScalar[c]));
-                    }
-                }
-                
-                for(int c = 0; c < chunk; c++){
-                    lutArrays->  SetValue(i+c,tmpScalar[c]);
-                }
-            }
-        } //else
-        
-        lutArrays->SetName(m_visOpt.colorScalar.c_str());
-        m_polyData->GetPointData()->SetScalars(lutArrays);
-        
-        double range [2];
-        lutArrays->GetRange(range);
-        if(range[0]<=0)
-            m_visOpt.uselogscale="none";
-        
-        lutArrays->Delete();
+        m_polyData->SetPoints(m_points);
+        m_polyData->SetVerts ( newVerts );
+       
+        polyDataList.push_back(m_polyData);
+        m_points->Delete();
+       // break;
     }
     
     inFile.close();
     
+    // connect m_pRendererderer and m_pRendererder window and configure m_pRendererder window
+    m_pRenderWindow->AddRenderer ( m_pRenderer );
     
+   
+    vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+
+    for (auto polyData : polyDataList) {
+      appendFilter->AddInputData(polyData);
+    }
+
+    appendFilter->Update();
+
     
-    setBoundingBox (m_polyData  );
-    /* VTK9 migration
-     m_pConeMapper->SetInput (m_polyData );
-     replaced
-     m_pConeMapper->SetInputData (m_polyData );
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+       mapper->SetInputData(appendFilter->GetOutput()); // Otteniamo l'output dell'append
      
-     */
-    m_pConeMapper->SetInputData (m_polyData );
-    m_pConeActor->SetMapper ( m_pConeMapper );
+    // Visualizza il PolyData combinato
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    // Aggiungi l'attore alla scena
+    vtkRenderer* renderer = vtkRenderer::New();
+    renderer->AddActor(actor);
+
+    // Visualizza la scena
+    vtkRenderWindow* renderWindow = vtkRenderWindow::New();
+    renderWindow->AddRenderer(renderer);
+
+    vtkRenderWindowInteractor* renderWindowInteractor = vtkRenderWindowInteractor::New();
+    renderWindowInteractor->SetRenderWindow(renderWindow);
+
+    renderWindow->Render();
+    renderWindowInteractor->Start();
     
-    if(m_visOpt.color=="none")
-    {
-        vtkProperty *P = vtkProperty::New();
-        P->SetColor(1, 1 ,1);  //default is white
-        if(m_visOpt.oneColor=="yellow") P->SetColor(1, 1 ,0);  
-        if(m_visOpt.oneColor=="red") P->SetColor(1, 0 ,0);  
-        if(m_visOpt.oneColor=="green") P->SetColor(0, 1 ,0);  
-        if(m_visOpt.oneColor=="blu") P->SetColor(0, 0 ,1);  
-        if(m_visOpt.oneColor=="cyane") P->SetColor(0, 1 ,1);  
-        if(m_visOpt.oneColor=="violet") P->SetColor(1, 0 ,1);  
-        if(m_visOpt.oneColor=="black") P->SetColor(0, 0 ,0);  
-        // 110 (giallo);  100(rosso), 010 Verde, 001 Blu, 011 Cyane, 101 Violet, 111 bianco ,000 (nero)
-        m_pConeActor->SetProperty(P);
-        P->Delete();
-    }
-    
-    m_pRenderer->AddActor ( m_pConeActor );
-    
-    if (m_visOpt.opacity<0 )
-        m_visOpt.opacity=0;
-    
-    else if( m_visOpt.opacity>1)
-        m_visOpt.opacity=1;
-    
-    m_pConeActor->GetProperty()->SetOpacity ( m_visOpt.opacity);
-    
-    if (m_visOpt.nGlyphs!=0)
-        setGlyphs (  );
-    
-    if(m_visOpt.scaleGlyphs!="none")  
-        setScaling ();
-    
-    
-    if ( m_visOpt.colorScalar!="none" && m_visOpt.color!="none")
-        setLookupTable ( );
-    
-    if(m_visOpt.scaleGlyphs!="none"&& m_visOpt.nGlyphs!=0 ||( (m_visOpt.heightscalar!="none" ||  (m_visOpt.radiusscalar!="none" && m_visOpt.nGlyphs!=1))  ))
-        m_glyph->ScalingOn();
-    else
-        m_glyph->ScalingOff();
-    
-    
-    m_pRenderer->SetBackground ( 0.0,0.0,0.0 );
-    if(m_visOpt.backColor=="yellow") m_pRenderer->SetBackground (1, 1 ,0);  
-    if(m_visOpt.backColor=="red")m_pRenderer->SetBackground (1, 0 ,0);  
-    if(m_visOpt.backColor=="green") m_pRenderer->SetBackground (0, 1 ,0);  
-    if(m_visOpt.backColor=="blue") m_pRenderer->SetBackground (0, 0 ,1);  
-    if(m_visOpt.backColor=="cyan") m_pRenderer->SetBackground (0, 1 ,1);  
-    if(m_visOpt.backColor=="violet") m_pRenderer->SetBackground (1, 0 ,1);  
-    if(m_visOpt.backColor=="white") m_pRenderer->SetBackground (1, 1 ,1);  
-    
-    if(m_visOpt.imageSize=="small")
-        m_pRenderWindow->SetSize ( 512,365 );
-    else if(m_visOpt.imageSize=="large")
-        m_pRenderWindow->SetSize ( 1024,731 );
-    else
-        m_pRenderWindow->SetSize ( 792,566 );
-    
-    m_pRenderWindow->SetWindowName ("VisIVOServer View");
-    
-    
-    if(m_visOpt.stereo)
-    {  
-        m_pRenderWindow->StereoRenderOn();
-        if(m_visOpt.stereoMode=="RedBlue")
-        {  
-            m_pRenderWindow->SetStereoTypeToRedBlue();;
-        }    
-        else if(m_visOpt.stereoMode=="Anaglyph")
-        {  
-            m_pRenderWindow->SetStereoTypeToAnaglyph();
-            m_pRenderWindow->SetAnaglyphColorSaturation(m_visOpt.anaglyphsat);
-            m_visOpt.anaglyphmask=trim(m_visOpt.anaglyphmask);
-            std::stringstream anatmp(m_visOpt.anaglyphmask);
-            int rightColorMask=4, leftColorMask=3;
-            anatmp>>rightColorMask;
-            anatmp>>leftColorMask;
-            m_pRenderWindow->SetAnaglyphColorMask(rightColorMask,leftColorMask);
-        }    
-        else
-        {
-            m_pRenderWindow->SetStereoTypeToCrystalEyes();
-            
-            if(m_visOpt.stereoImg==0)
-            {
-                m_pRenderWindow->SetStereoTypeToRight();
-            }else
-            {	 
-                m_pRenderWindow->SetStereoTypeToLeft();
-            }
-        }   
-        m_pRenderWindow->StereoUpdate();
-    }
-    
-    //open view
-    //------------------------------------------------------------------
-    /**/vtkGenericRenderWindowInteractor* inter=vtkGenericRenderWindowInteractor::New();//generic/**/
-    m_pRenderWindow->SetInteractor(inter);
-    m_pRenderWindow->Render();
-    //--------------------------------------------------------------------
-    //  m_pRenderer->Render();
-    setCamera ();
-    double *bounds;
-    bounds=new double[6];
-    bounds[0]=m_xRange[0];
-    bounds[1]=m_xRange[1];
-    bounds[2]=m_yRange[0];
-    bounds[3]=m_yRange[1];
-    bounds[4]=m_zRange[0];
-    bounds[5]=m_zRange[1];
-    
-    if(m_visOpt.showAxes) setAxes (m_polyData,bounds );
-    delete [] bounds;
-    
-    //open view
-    //-----------------------------------
-    inter->Start();
-    inter->ExitEvent();
-    //-----------------------------------
-    //   vtkVRMLExporter *writer= vtkVRMLExporter::New();
-    //   writer->SetInput(m_pRenderWindow);
-    //   writer->SetFilePointer(stdout);
-    //   writer->Write();
-    //write->Delete();
-    
-    if(inter!=0)
-        inter->Delete();
-    if(newVerts!=0)
-        newVerts->Delete();
-    radiusArrays->Delete();
-    return 0;
 }
 
 
@@ -559,7 +243,7 @@ void PointsPipe::setGlyphs ( )
     int max=1000;
     
     if ( m_visOpt.nRows<max )
-    {    
+    {
         /* VTK9 migration
          m_glyph->SetInput (m_polyData );
          replaced
@@ -569,7 +253,7 @@ void PointsPipe::setGlyphs ( )
         m_glyph->SetInputData (m_polyData );
         
         
-        if (m_visOpt.scale=="yes") 	 
+        if (m_visOpt.scale=="yes")
             m_glyph->SetScaleFactor ( 0.04 );
         
         else
@@ -607,7 +291,7 @@ void PointsPipe::setGlyphs ( )
         }
         
         else if (m_visOpt.nGlyphs==3)
-        {  
+        {
             m_cylinder   = vtkCylinderSource::New();
             setResolution ( );
             setRadius ();
@@ -625,11 +309,11 @@ void PointsPipe::setGlyphs ( )
             m_cube   = vtkCubeSource::New();
             setRadius ();
             /* VTK9 migration
-             m_glyph->SetSource ( m_cube->GetOutput() );  
+             m_glyph->SetSource ( m_cube->GetOutput() );
              replaced
-             m_glyph->SetSourceData ( m_cube->GetOutput() );  
+             m_glyph->SetSourceData ( m_cube->GetOutput() );
              */
-            m_glyph->SetSourceData ( m_cube->GetOutput() );  
+            m_glyph->SetSourceData ( m_cube->GetOutput() );
             m_cube->Delete();
         }
         
@@ -694,16 +378,16 @@ void PointsPipe::setRadius ()
     }
     
     else if (m_visOpt.nGlyphs==3)
-    {  
+    {
         
         m_cylinder->SetRadius (m_visOpt.radius );
         m_cylinder->SetHeight ( m_visOpt.height );
     }
     else if (m_visOpt.nGlyphs==4)
     {
-        m_cube->SetXLength ( m_visOpt.radius );    
-        m_cube->SetYLength ( m_visOpt.height );   
-        m_cube->SetZLength ( 1 );  
+        m_cube->SetXLength ( m_visOpt.radius );
+        m_cube->SetYLength ( m_visOpt.height );
+        m_cube->SetZLength ( 1 );
         
     }
 }
@@ -816,7 +500,7 @@ void PointsPipe::setScaling ()
     if( m_visOpt.heightscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0 && m_visOpt.nGlyphs!=1)
         m_glyphFilter->SetInputScalarsSelectionY(m_visOpt.heightscalar.c_str());
     
-    if( m_visOpt.radiusscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0)  
+    if( m_visOpt.radiusscalar!="none" && m_visOpt.scaleGlyphs!="none" && m_visOpt.nGlyphs!=0)
         m_glyphFilter->SetInputScalarsSelectionXZ(m_visOpt.heightscalar.c_str());
     
     
@@ -827,3 +511,4 @@ void PointsPipe::setScaling ()
     
     
 }
+
