@@ -110,9 +110,10 @@ int PointsPipe::createPipe ()
     std::ifstream inFile;
     
     vtkFloatArray *radiusArrays =vtkFloatArray::New();
-   
-    
-    
+    vtkFloatArray *lutArrays =vtkFloatArray::New();
+    lutArrays->SetNumberOfTuples(m_visOpt.nRows);
+    lutArrays->SetName(m_visOpt.colorScalar.c_str());
+
     unsigned long long int xIndex, yIndex,zIndex;
     
     
@@ -121,10 +122,11 @@ int PointsPipe::createPipe ()
     if(!inFile.is_open())
         return -1;
     
-    unsigned long long int chunk = 10000;
+    unsigned long long int chunk = 2000000;
     if(m_visOpt.nRows < chunk)
         chunk = m_visOpt.nRows;
     float tmpAxis[chunk];
+    float globalRange[2]={0};
     
     std::vector<vtkSmartPointer<vtkPolyData>> polyDataList ;
     for(i=0; i <  m_visOpt.nRows; i= i + chunk)
@@ -138,14 +140,15 @@ int PointsPipe::createPipe ()
         yAxis->SetNumberOfTuples(chunk);
         zAxis->SetNumberOfTuples(chunk);
         
+        
         xAxis->SetName(m_visOpt.xField.c_str());
         yAxis->SetName(m_visOpt.yField.c_str());
         zAxis->SetName(m_visOpt.zField.c_str());
         
         // Leggere i dati dal file per il chunk corrente
-          if (i + chunk > m_visOpt.nRows) {
+        if (i + chunk > m_visOpt.nRows) {
             chunk = m_visOpt.nRows - i;
-          }
+        }
         inFile.seekg((m_visOpt.x*m_visOpt.nRows +i)* sizeof(float) );
         inFile.read((char *)( tmpAxis),chunk*sizeof(float));
         
@@ -172,7 +175,7 @@ int PointsPipe::createPipe ()
         m_points->SetNumberOfPoints(chunk);
         vtkCellArray *newVerts = vtkCellArray::New();
         newVerts->EstimateSize (chunk,1 );
-
+        
         
         float outPoint[3];
         for(j = 0; j < chunk; j++)
@@ -185,47 +188,123 @@ int PointsPipe::createPipe ()
             newVerts->InsertNextCell(1);
             newVerts->InsertCellPoint ( j );
         }
-                
+        
+        
+        if(m_visOpt.colorScalar!="none")
+        {
+            
+            
+            inFile.seekg((m_visOpt.nColorScalar * m_visOpt.nRows+i )* sizeof(float));
+            inFile.read((char *)(tmpAxis),  chunk*sizeof(float));
+            
+            for(int c = 0; c < chunk; c++){
+                lutArrays->  SetValue(i+c,tmpAxis[c]);
+            }
+            
+            //m_polyData->GetPointData()->SetScalars(lutArrays);
+            
+            
+            
+        }
+        
         m_polyData->SetPoints(m_points);
         m_polyData->SetVerts ( newVerts );
-       
+        
         polyDataList.push_back(m_polyData);
         
         m_points->Delete();
         xAxis->Delete();
         yAxis->Delete();
         zAxis->Delete();
-       // break;
+        // break;
     }
     
+    double range [2];
+    lutArrays->GetRange(range);
+    if(range[0]<=0)
+        m_visOpt.uselogscale="none";
+
     inFile.close();
     
-    // connect m_pRendererderer and m_pRendererder window and configure m_pRendererder window
-    //m_pRenderWindow->AddRenderer ( m_pRenderer );
     
-   
-   /* vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-*/
+    std::cout<<"range[0] "<<range[0]<<" range[1] "<<range[1];
     vtkRenderer* renderer = vtkRenderer::New();
     // Visualizza la scena
     vtkRenderWindow* renderWindow = vtkRenderWindow::New();
     renderWindow->AddRenderer(renderer);
-
+    
     vtkRenderWindowInteractor* renderWindowInteractor = vtkRenderWindowInteractor::New();
     renderWindowInteractor->SetRenderWindow(renderWindow);
-
+    
+    std::cout<<"numero attori"<<polyDataList.size();
+    
+    if ( m_visOpt.colorScalar!="none" && m_visOpt.color!="none")
+        SelectLookTable(&m_visOpt, m_lut);
 
     
     for (auto polyData : polyDataList) {
-  //    appendFilter->AddInputData(polyData);
+        
         vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-           mapper->SetInputData(polyData); // Otteniamo l'output dell'append
-        // Visualizza il PolyData combinato
+        mapper->SetInputData(polyData);
+        
         vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
         actor->SetMapper(mapper);
+        polyData->GetPointData()->SetScalars(lutArrays);
+        if ( m_visOpt.colorScalar!="none" && m_visOpt.color!="none")
+        {
+            polyData->GetPointData()->SetActiveScalars(m_visOpt.colorScalar.c_str());
+            if(m_visOpt.isColorRangeFrom) 
+                range[0]=m_visOpt.colorRangeFrom;
+            if(m_visOpt.isColorRangeTo)
+                range[1]=m_visOpt.colorRangeTo;
+            if(range[1]<=range[0])
+                range[1]=range[0]+0.0001;
+            
+            m_lut->SetTableRange(range);
+            
+            
+            if(m_visOpt.uselogscale=="yes")
+                m_lut->SetScaleToLog10();
+            else
+                m_lut->SetScaleToLinear();
+            
+            m_lut->Build();
+            
+            
+            mapper->SetLookupTable(m_lut);
+            mapper->SetScalarVisibility(1);
+            mapper->UseLookupTableScalarRangeOn();
+            
+           
+            
+        }
+        actor->SetMapper(mapper);
         renderer->AddActor(actor);
+        
+        
     }
     
+    if(m_visOpt.colorScalar!="none")
+    {
+        if(m_visOpt.showLut)
+        {
+            vtkScalarBarActor *scalarBar=vtkScalarBarActor::New();
+            scalarBar->SetTitle (  m_visOpt.colorScalar.c_str() );
+            scalarBar->SetLabelFormat ( "%.3g" );
+            scalarBar->SetOrientationToHorizontal();
+            scalarBar->SetPosition ( 0.1,0 );
+            scalarBar->SetPosition2 ( 0.8,0.1 );
+            scalarBar->SetLookupTable (m_lut );
+            scalarBar->SetVisibility(1);
+            
+            renderer->AddActor ( scalarBar );
+            
+            if (scalarBar!=0)
+                scalarBar->Delete();
+        }
+        lutArrays->Delete();
+
+    }
     renderWindow->Render();
     renderWindowInteractor->Start();
 }
