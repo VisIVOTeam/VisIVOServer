@@ -56,6 +56,8 @@
 #include "vtkAppendPolyData.h"
 #include "vtkPolyDataWriter.h"
 
+#include "vtkActorCollection.h"
+
 //---------------------------------------------------------------------
 PointsPipe::PointsPipe ( VisIVOServerOptions options)
 //---------------------------------------------------------------------
@@ -113,7 +115,7 @@ int PointsPipe::createPipe ()
     vtkFloatArray *lutArrays =vtkFloatArray::New();
     lutArrays->SetNumberOfTuples(m_visOpt.nRows);
     lutArrays->SetName(m_visOpt.colorScalar.c_str());
-
+    
     unsigned long long int xIndex, yIndex,zIndex;
     
     
@@ -223,7 +225,7 @@ int PointsPipe::createPipe ()
     lutArrays->GetRange(range);
     if(range[0]<=0)
         m_visOpt.uselogscale="none";
-
+    
     inFile.close();
     
     
@@ -240,15 +242,15 @@ int PointsPipe::createPipe ()
     
     if ( m_visOpt.colorScalar!="none" && m_visOpt.color!="none")
         SelectLookTable(&m_visOpt, m_lut);
-
+    
+    
     
     for (auto polyData : polyDataList) {
         
         vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         mapper->SetInputData(polyData);
         
-        vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-        actor->SetMapper(mapper);
+        
         polyData->GetPointData()->SetScalars(lutArrays);
         if ( m_visOpt.colorScalar!="none" && m_visOpt.color!="none")
         {
@@ -275,17 +277,20 @@ int PointsPipe::createPipe ()
             mapper->SetScalarVisibility(1);
             mapper->UseLookupTableScalarRangeOn();
             
-           
+            
             
         }
+        vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
         actor->SetMapper(mapper);
         renderer->AddActor(actor);
         
-        
     }
+    
     
     if(m_visOpt.colorScalar!="none")
     {
+        
+        
         if(m_visOpt.showLut)
         {
             vtkScalarBarActor *scalarBar=vtkScalarBarActor::New();
@@ -303,7 +308,7 @@ int PointsPipe::createPipe ()
                 scalarBar->Delete();
         }
         lutArrays->Delete();
-
+        
     }
     renderWindow->Render();
     renderWindowInteractor->Start();
