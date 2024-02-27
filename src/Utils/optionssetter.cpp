@@ -3810,12 +3810,14 @@ int OptionsSetter::images()
                 pp=new PointsPipe(m_vServer); 
             }
             errPipe=pp->createPipe();
-            std::string fName = pp->saveImageAsPng(m_vServer.numImage);
-            
-            //Filename for history!
-            outFilename.insert(outFilename.end(), fName);
-            //std::cout<<"************"<<fName<<"*****************"<<std::endl;
-            
+            if (viewParameter["largeimage"]!="yes")
+            {
+                std::string fName = pp->saveImageAsPng(m_vServer.numImage);
+                
+                //Filename for history!
+                outFilename.insert(outFilename.end(), fName);
+                //std::cout<<"************"<<fName<<"*****************"<<std::endl;
+            }
 #ifdef GLITE
             if(m_vServer.lfnout!="none")
             { 

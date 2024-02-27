@@ -58,6 +58,8 @@ class vtkConeSource;
     void setResolution ();
     bool SetXYZ(vtkFloatArray *xField, vtkFloatArray *yField, vtkFloatArray *zField  );
     void setScaling ();
+    std::string localSaveImageAsPng(int num );
+
      
     vtkPolyDataMapper  *m_pConeMapper;
     vtkActor           *m_pConeActor;
