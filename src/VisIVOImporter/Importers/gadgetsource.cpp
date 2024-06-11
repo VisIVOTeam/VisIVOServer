@@ -36,6 +36,10 @@
 #include <omp.h>
 #include <unistd.h>
 
+#ifndef off64_t
+#define off64_t off_t
+#endif
+
 bool isNumeric(std::string const &str)
 {
   auto it = str.begin();
@@ -87,7 +91,7 @@ int GadgetSource::readHeader()
     headerType2 curHead;
     inFile.seekg(4, std::ios::beg);
     
-    inFile.read((char *)(&curHead), 304);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
+    inFile.read((char *)(&curHead), 256);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
     m_snapformat = 2;
     if (needSwap)
       swapHeaderType2();
@@ -155,7 +159,7 @@ int GadgetSource::readMultipleHeaders(int nFiles, std::string fileName, bool nee
     
     inFile.seekg(4, std::ios::beg);
     
-    inFile.read((char *)(&curHead), 304);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
+    inFile.read((char *)(&curHead), 256);   //!*** COPY DATA in STRUCT m_pHeaderType2 ***//
     if (needSwap)
       swapHeaderType2();
     m_pHeaderType2.push_back(curHead);
