@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Gabriella Caniglia *
+ *   Copyright (C) 2008 by Gabriella Caniglia, Roberto Munzone *
  *  gabriella.caniglia@oact.inaf.it *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,56 +18,78 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef VolumePipe_H
-#define VolumePipe_H
 
-#include "pipe.h"
-#include "optionssetter.h"
-#include "visivoutils.h"
+#ifndef CHANGASOURCE_H
+#define CHANGASOURCE_H
 
-   class vtkImageData;
-   class vtkVolume;
-   class vtkColorTransferFunction;
-   class vtkImageMathematics;
-   class vtkPiecewiseFunction;
-   class vtkImageCast;
-   class vtkVolumeProperty;
-  /* VTK9 migration
-   class vtkVolumeRayCastCompositeFunction;
-   class vtkVolumeRayCastMapper;
-*/
-  class vtkFixedPointVolumeRayCastMapper;
-        
-   class VolumePipe: public Pipe
+#include "abstractsource.h"
+
+#include <vector>
+#include <string>
+#include <rpc/xdr.h>
+#include <rpc/rpc.h>
+
+
+struct header
 {
-
-  public:
-    VolumePipe( VisIVOServerOptions options);
-    ~VolumePipe();
-   
-  protected:
-   
-    int createPipe();
-    bool setLookupTable();
-    double m_range[2]; 
-    double m_localRange[2]; 
-   void destroyAll();
-   void colorBar();
-    
-    vtkColorTransferFunction *m_colorTransferFunction;
-    vtkImageData *m_imageData;
-    vtkImageMathematics *m_math;
-    vtkImageMathematics *m_math2;
-    vtkImageCast *m_charData;
-    vtkPiecewiseFunction *m_opacityTransferFunction;
-    vtkVolumeProperty *m_volumeProperty;
-    /* VTK9 migration
-    vtkVolumeRayCastCompositeFunction * m_rayCastCompositFunction ;
-    vtkVolumeRayCastMapper *m_rayCastMapper ;
-    */
-    vtkFixedPointVolumeRayCastMapper *m_rayCastMapper ;
-    vtkVolume *m_volume ;
-
-    vtkLookupTable      *m_localLut;
+    double time ;
+    int nbodies ;
+    int ndim ;
+    int nsph ;
+    int ndark ;
+    int nstar ;
+    int pad;
 };
+
+struct gas_particle {
+    float mass;
+    float pos[3];
+    float vel[3];
+    float rho;
+    float temp;
+    float eps;
+    float metals ;
+    float phi ;
+};
+
+struct dark_particle {
+    float mass;
+    float pos[3];
+    float vel[3];
+    float eps;
+    float phi ;
+};
+
+struct star_particle {
+    float mass;
+    float pos[3];
+    float vel[3];
+    float metals ;
+    float tform ;
+    float eps;
+    float phi ;
+};
+
+class ChangaSource : public AbstractSource
+   
+{
+  public: //! Read the headerType2 file and set the basic table parameters
+    int readHeader();
+    int readData();
+        
+  private:
+
+    int xdr_header(struct header *, XDR);
+    std::vector <std::string> m_fieldsNames;   
+    unsigned int      npart_total[6];
+    XDR xdrread;
+    FILE *fpread;
+    int nsph;
+    int ndark;
+    int nstar;
+    char m_dataType, m_Endian;
+  
+};
+  
+
 #endif

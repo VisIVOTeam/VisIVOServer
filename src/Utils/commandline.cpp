@@ -29,19 +29,21 @@
 #include "visivoutils.h"
 #include "asciisource.h"
 #include "csvsource.h"
+#include "changasource.h"
 #include "binsource.h"
+#include "gadgetsource.h"
 #include "flysource.h"
 #include "vosourcenew.h"
-#include "gadgetsource.h"
+#include "hecubasource.h"
 
 #ifndef LIGHT
   #include "xmlsource.h"
   #include "vosource.h"
 #endif
 
-#include "fitstablesource.h"
-#include "fitsimagesource.h"
-#include "hdf5source.h"
+//#include "fitstablesource.h"
+//#include "fitsimagesource.h"
+//#include "hdf5source.h"
 #include "rawgridsource.h"
 #include "rawpointssource.h"
 #include "muportalsource.h"
@@ -611,13 +613,13 @@ int CommandLine::loadFile ()
 		else if ( m_type=="binary")
 			pSource = new BinSource();
  
-		else if (m_type=="fitstable")
-			pSource = new FitsTableSource();
+		//else if (m_type=="fitstable")
+		//	pSource = new FitsTableSource();
    
-		else if(m_type=="fitsimage")
+		/*else if(m_type=="fitsimage")
         {
 			pSource = new FitsImageSource();
-        }
+        }*/
 		else if(m_type=="csv" )
 			pSource = new CSVSource();
 
@@ -637,14 +639,25 @@ int CommandLine::loadFile ()
   
 		else if(m_type=="gadget")
 			pSource = new GadgetSource();
+/*
+		else if(m_type=="hecuba")
+			pSource = new ChangaSource();
+*/
+		else if(m_type=="hecuba")
+			pSource = new HecubaSource();
+
+		else if(m_type=="changa")
+			pSource = new ChangaSource();
+		
 
 #ifndef LIGHT
 		else if(m_type=="xml")
 			pSource = new XmlSource();
 #endif
+/*
 		else if(m_type=="hdf5")
 			pSource = new HDF5Source();
-     
+     */
     
 		else if(m_type=="rawgrids")
 		{
@@ -660,6 +673,7 @@ int CommandLine::loadFile ()
 		  pSource = new RamsesSource();
 
 		}
+			
 		else
 		{ 
 			std::cerr<<"the format given '"<<m_type<<"' is incorrect, please try again  or --help for help"<<std::endl;

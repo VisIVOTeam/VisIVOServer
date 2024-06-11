@@ -699,4 +699,3 @@ void FitsTableSource::SetScalFields(int col)
     
     return;
 }
-

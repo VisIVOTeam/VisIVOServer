@@ -157,6 +157,7 @@ startFilter::startFilter(std::map<std::string,std::string> appParameters)
     if(sstreamOp.str()=="mres") idOp=35;
     //if(sstreamOp.str()=="clustercell") idOp=36;
     if(sstreamOp.str()=="poca") idOp=37;
+    if(sstreamOp.str()=="extract") idOp=38;
     
 #ifdef GLITE
     if(idOp==21 || idOp==22 ||idOp==27 ||idOp==29)

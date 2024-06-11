@@ -52,6 +52,7 @@
 #include "vtkRenderer.h"
 #include "vtkActor.h"
 #include "vtkAxesActor.h"
+#include "vtkPolyDataWriter.h"
 
 //---------------------------------------------------------------------
 PointsPipe::PointsPipe ( VisIVOServerOptions options)

@@ -55,7 +55,7 @@ class Pipe
     void constructVTK();
      void destroyVTK();
      void setBoundingBox ( vtkDataObject *data );
-     void colorBar ();
+     virtual void colorBar ();
      virtual  void setAxes(vtkDataSet *data,double *bounds);
     
     VisIVOServerOptions m_visOpt;

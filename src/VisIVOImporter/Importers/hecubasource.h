@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Gabriella Caniglia *
+ *   Copyright (C) 2008 by Gabriella Caniglia, Roberto Munzone *
  *  gabriella.caniglia@oact.inaf.it *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,56 +18,62 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef VolumePipe_H
-#define VolumePipe_H
 
-#include "pipe.h"
-#include "optionssetter.h"
-#include "visivoutils.h"
+#ifndef HECUBASOURCE_H
+#define HECUBASOURCE_H
 
-   class vtkImageData;
-   class vtkVolume;
-   class vtkColorTransferFunction;
-   class vtkImageMathematics;
-   class vtkPiecewiseFunction;
-   class vtkImageCast;
-   class vtkVolumeProperty;
-  /* VTK9 migration
-   class vtkVolumeRayCastCompositeFunction;
-   class vtkVolumeRayCastMapper;
-*/
-  class vtkFixedPointVolumeRayCastMapper;
-        
-   class VolumePipe: public Pipe
-{
+#include "abstractsource.h"
 
-  public:
-    VolumePipe( VisIVOServerOptions options);
-    ~VolumePipe();
-   
-  protected:
-   
-    int createPipe();
-    bool setLookupTable();
-    double m_range[2]; 
-    double m_localRange[2]; 
-   void destroyAll();
-   void colorBar();
-    
-    vtkColorTransferFunction *m_colorTransferFunction;
-    vtkImageData *m_imageData;
-    vtkImageMathematics *m_math;
-    vtkImageMathematics *m_math2;
-    vtkImageCast *m_charData;
-    vtkPiecewiseFunction *m_opacityTransferFunction;
-    vtkVolumeProperty *m_volumeProperty;
-    /* VTK9 migration
-    vtkVolumeRayCastCompositeFunction * m_rayCastCompositFunction ;
-    vtkVolumeRayCastMapper *m_rayCastMapper ;
-    */
-    vtkFixedPointVolumeRayCastMapper *m_rayCastMapper ;
-    vtkVolume *m_volume ;
+#include <vector>
+#include <string>
+#include "StorageDict.h"
+#include <StorageNumpy.h>
+#include <StorageObject.h>
+#include <StorageStream.h>
+#include <KeyClass.h>
+#include <ValueClass.h>
 
-    vtkLookupTable      *m_localLut;
+class headerObject:public StorageObject{
+public:
+HECUBA_ATTRS (
+     double, time,
+     int32_t, nbodies,
+     int32_t, ndim,
+     int32_t, nsph,
+     int32_t, ndark,
+     int32_t, nstar,
+     int32_t, pad,
+    )
 };
+class particleObject:public StorageObject{
+    public:
+    HECUBA_ATTRS (
+        StorageNumpy, particle
+        )
+};
+using Key = KeyClass<int32_t>;
+using Value = ValueClass<particleObject>;
+class particleDict : public StorageDict<Key,Value,particleDict>{
+} ;
+class HecubaSource : public AbstractSource
+   
+{
+  public: 
+    int readHeader();
+    int readData();
+        
+  private:
+    void writeGasParticles(StorageNumpy s);
+    void writeDakParticles(StorageNumpy s);
+    void writeStarParticles(StorageNumpy s);
+    std::vector <std::string> m_fieldsNames;   
+    unsigned int      npart_total[6];
+    
+    int nsph;
+    int ndark;
+    int nstar;
+    char m_dataType, m_Endian;
+  
+};
+
 #endif
