@@ -39,7 +39,7 @@ class CommandLine
     std::string getRemoteFile() {return m_remoteFile;} ; 
     std::string getType() {return m_type;} ; 
 
-    std::string   m_currentPath, m_type,m_ext, m_binaryDir, m_binaryPath,  m_binaryName,m_binaryHeader, m_file, m_endian, m_dataType, m_out, m_login, m_remoteFile,m_datasetList;
+    std::string   m_currentPath, m_type,m_ext, m_binaryDir, m_binaryPath,  m_binaryName,m_binaryHeader, m_file, m_endian, m_dataType, m_out, m_login, m_remoteFile,m_datasetList, m_aliasHeader, m_aliasParticle;
     bool m_historyEnabled;
     float m_missing, m_text;
 double m_size[3],m_comput[3]; //!volume data

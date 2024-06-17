@@ -99,7 +99,8 @@ int main(int argc, char*argv[])
   
   if(!usingParameterFile)
   {
-    if(argc<4)
+	std::clog << "narg " << argc<< std::endl;
+    if(argc<3)
     { 
       pComLine->showHelp();
       exit(1);

@@ -45,14 +45,16 @@ HECUBA_ATTRS (
      int32_t, pad,
     )
 };
-class particleObject:public StorageObject{
+class particleObj:public StorageObject{
     public:
     HECUBA_ATTRS (
-        StorageNumpy, particle
-        )
+        StorageNumpy, gasParticle,
+        StorageNumpy, darkParticle,
+        StorageNumpy, starParticle
+        );
 };
 using Key = KeyClass<int32_t>;
-using Value = ValueClass<particleObject>;
+using Value = ValueClass<particleObj>;
 class particleDict : public StorageDict<Key,Value,particleDict>{
 } ;
 class HecubaSource : public AbstractSource
@@ -64,7 +66,7 @@ class HecubaSource : public AbstractSource
         
   private:
     void writeGasParticles(StorageNumpy s);
-    void writeDakParticles(StorageNumpy s);
+    void writeDarkParticles(StorageNumpy s);
     void writeStarParticles(StorageNumpy s);
     std::vector <std::string> m_fieldsNames;   
     unsigned int      npart_total[6];

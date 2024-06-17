@@ -198,6 +198,26 @@ int CommandLine::parseOption (const std::vector<std::string>  arguments )
 		else  if (arguments[i]=="--bigendian")
 		{
 			m_endian="big";
+		}		
+		else  if (arguments[i]=="--aliasparticle")
+		{
+			std::string ckInput=arguments[i+1];
+      		if(ckInput.find_first_of('-')==0)
+      		{
+        	    std::cerr<<"Error on "<<arguments[i]<< " argument: "<<ckInput<<std::endl;
+		    	return -1;
+      		}	
+			m_aliasParticle=arguments[++i].c_str();
+		}		
+		else  if (arguments[i]=="--aliasheader")
+		{
+			std::string ckInput=arguments[i+1];
+      		if(ckInput.find_first_of('-')==0)
+      		{
+        	    std::cerr<<"Error on "<<arguments[i]<< " argument: "<<ckInput<<std::endl;
+		    	return -1;
+      		}	
+			m_aliasHeader=arguments[++i].c_str();
 		}
  
     
@@ -542,7 +562,7 @@ int CommandLine::parseOption (const std::vector<std::string>  arguments )
 
 		}
   
-	if(m_type!="fitstable" && m_type!="ramses" && m_type!="fitsimage")
+	if(m_type!="fitstable" && m_type!="ramses" && m_type!="fitsimage" && m_type!="hecuba")
 	{ 
 		std::ifstream inFile;
 		inFile.open(m_currentPath.c_str());
@@ -681,7 +701,7 @@ int CommandLine::loadFile ()
 		}
 		pSource->setPointsFileName(m_currentPath.c_str(),m_binaryPath.c_str(),m_file.c_str(),
 					   m_size,m_comput,m_file.c_str(),m_endian.c_str(),
-					   m_dataType.c_str(),m_npoints,m_login.c_str(),
+					   m_dataType.c_str(),m_aliasParticle.c_str(), m_aliasHeader.c_str(),m_npoints,m_login.c_str(),
 					   m_binaryHeader.c_str(),m_missing,m_text,m_datasetList,
 					   m_hyperslab,m_fitshdunum, m_fields);
 		if(pSource->readHeader()==0)

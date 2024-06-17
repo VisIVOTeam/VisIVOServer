@@ -35,12 +35,15 @@ class AbstractSource
     virtual ~AbstractSource() = default;
 
     void setPointsFileName(const char* fileName, const char* binaryName, 
-			   const char* tableOrVolume, double size[], 
-			   double comput[], const char* file, const char* endian, 
-			   const char* type, long unsigned int points, 
-			   const char* login, const char* binaryHeader, 
-			   float missing, float text, std::string datasetdList,
-			   std::vector<std::string> hyperslab, int fitshdunum, std::vector<std::string> fields);
+				       const char* tableOrVolume, double size[], 
+				       double comput[], const char* file, 
+				       const char* endian, const char* type,
+               const char* aliasParticle, const char* aliasHeader, 
+				       long unsigned int points, 
+				       const char* login, const char* binaryHeader, 
+				       float missing, float text, 
+				       std::string datasetdList,
+				       std::vector<std::string> hyperslab, int fitshdunum, std::vector<std::string> fields);
 
     void setPointsFileName(const char *fileName,const char *binaryName);
 //     void releaseResources();
@@ -67,6 +70,8 @@ class AbstractSource
     std::string m_type;
     std::string m_file;
     std::string m_endian;
+    std::string m_aliasParticle;
+    std::string m_aliasHeader;
     std::string m_login;
     std::string m_binaryHeader;
     std::string m_datasetList;
