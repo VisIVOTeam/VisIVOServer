@@ -123,8 +123,12 @@ set(IMPORTER_SOURCE
     Importers/asciisource.h
     Importers/binsource.cpp
     Importers/binsource.h
+    Importers/changasource.cpp
+    Importers/changasource.h
     Importers/csvsource.cpp
     Importers/csvsource.h
+    Importers/hecubasource.cpp
+    Importers/hecubasource.h
     Importers/fitsimagesource.cpp
     Importers/fitsimagesource.h
     Importers/fitstablesource.cpp
@@ -174,6 +178,22 @@ target_include_directories(VisIVOImporter PRIVATE
     ${UTILS_SOURCE_DIR}
 )
 
+install(TARGETS VisIVOImporter DESTINATION bin)
+
+target_compile_definitions(VisIVOImporter PRIVATE LIGHT)
+
+#Need to update this
+set(HECUBA_ROOT "/home/nicola/.local")
+
+find_library(HECUBA_HFETCH_LIBRARY hfetch PATHS ${HECUBA_ROOT}/lib)
+if(NOT HECUBA_HFETCH_LIBRARY)
+    message(FATAL_ERROR "Hecuba hfetch library not found in ${HECUBA_ROOT}/lib")
+endif()
+
+target_include_directories(VisIVOImporter PRIVATE ${HECUBA_ROOT}/include ${HECUBA_ROOT}/include/hecuba)
+target_link_libraries(VisIVOImporter PRIVATE ${HECUBA_HFETCH_LIBRARY}) 
+set(CXXFLAGS "-fopenmp")
+set(CMAKE_CXX_FLAGS "${CXXFLAGS}")
 target_link_libraries(VisIVOImporter PRIVATE
     CFITSIO::CFITSIO
     CURL::libcurl
@@ -181,12 +201,6 @@ target_link_libraries(VisIVOImporter PRIVATE
     OpenMP::OpenMP_CXX
     ${VTK_LIBRARIES}
     stdc++fs
+    tirpc
 )
-
-install(TARGETS VisIVOImporter DESTINATION bin)
-
-target_compile_definitions(VisIVOImporter PRIVATE LIGHT)
-
-set(CXXFLAGS  -fopenmp)
-set(CMAKE_CXX_FLAGS "${CXXFLAGS}")
 target_link_libraries(VisIVOImporter PUBLIC MPI::MPI_CXX)
