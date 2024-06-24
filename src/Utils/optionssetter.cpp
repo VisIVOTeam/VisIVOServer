@@ -2938,7 +2938,7 @@ void OptionsSetter::showHelp()
     
     std::clog<<" --scaleglyphs     (optional)  Enables the geometrical form to be scaled with a scalar field."<<std::endl<<std::endl;
     
-    std::clog<<" --radius  [value}  (optional) Select radius size"<<std::endl<<std::endl;
+    std::clog<<" --radius  [value]  (optional) Select radius size"<<std::endl<<std::endl;
     
     std::clog<<" --height [value]  (optional) Select height size"<<std::endl<<std::endl;
     
@@ -2958,6 +2958,12 @@ void OptionsSetter::showHelp()
     std::clog<<" --vrenderingfield [field]   (optional) To visualize volume rendering you must select this command with --volume and --vrendering (--volume --vrendering --vrenderingfield scalar0)"<<std::endl<<std::endl;
     
     std::clog<<"--shadow (optional) Enables shadow view in the rendering view. "<<std::endl<<std::endl;
+
+    std::clog<<"--autorange (Optional) Enables auto range feature, which allows to get an automatically computed view range for the image. "<<std::endl<<std::endl;
+    
+    std::clog<<"-autorangemin [value] (Optional) Sets the minimum value of view range for the image, it is ignored if --autorange option is not enabled." << std:endl<<std::endl;
+    
+    std::clog<<"-autorangemax [value] (Optional) Sets the maximum value of view range for the image, it is ignored if --autorange option is not enabled." << std:endl<<std::endl;
     
     std::clog<<" --slice   (optional) If you want visualize orthoslice you must select this command with --volume --sliceplane and --vslicefield "<<std::endl<<std::endl;
     
