@@ -24,6 +24,7 @@
 #include "pipe.h"
 #include "optionssetter.h"
 #include "visivoutils.h"
+#include <vtkImageThreshold.h>
 
    class vtkImageData;
    class vtkVolume;
@@ -50,12 +51,16 @@
     int createPipe();
     bool setLookupTable();
     double m_range[2]; 
+    double m_localRange[2]; 
    void destroyAll();
+   void colorBar();
     
     vtkColorTransferFunction *m_colorTransferFunction;
     vtkImageData *m_imageData;
     vtkImageMathematics *m_math;
     vtkImageMathematics *m_math2;
+    vtkImageThreshold *threshold;
+    vtkImageThreshold *threshold2;
     vtkImageCast *m_charData;
     vtkPiecewiseFunction *m_opacityTransferFunction;
     vtkVolumeProperty *m_volumeProperty;
@@ -65,5 +70,7 @@
     */
     vtkFixedPointVolumeRayCastMapper *m_rayCastMapper ;
     vtkVolume *m_volume ;
+
+    vtkLookupTable      *m_localLut;
 };
 #endif

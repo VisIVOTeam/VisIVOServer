@@ -111,6 +111,10 @@ struct VisIVOServerOptions
   std::string imageSize;//! assume values: small, medium (default), large
   std::string isoSmooth;//! assume values: none (default), low, medium, high
   std::string slice;//! if is yes can visualize a slice
+  std::string autoRange;//! if is yes volume renderer uses autorange filter
+  float autoRangeMin; //!force autorange minimum value
+  float autoRangeMax; //!force autorange maximum value
+  bool setAutoRangeMin, setAutoRangeMax;
   std::string isosurface;//! if is yes can visualize a isosurface 
   std::string radiusscalar,heightscalar;//! name of field the isd used for scale the glyphs by radius and/or heigth
   std::string glyphs;//! glyphs selected

@@ -1881,6 +1881,47 @@ int OptionsSetter::parseOption (const std::vector<std::string>  arguments )
                 viewParameter["logscale"]="yes";
                 
             }
+
+            else if(arguments[i]=="--autorange")
+            {
+                m_vServer.autoRange="yes";
+                viewParameter["autoRange"]="yes";
+                
+            }
+            
+            else if(arguments[i]=="--autorangemin")
+            {
+                std::string ckInput=arguments[i+1];
+                if(ckInput.find_first_of('-')==0)
+                {
+                    std::cerr<<"Error on --autorange argument: "<<ckInput<<std::endl;
+                    return -1;
+                }
+
+                std::stringstream ss1;
+                
+                ss1<<arguments[++i];
+                ss1>>m_vServer.autoRangeMin;
+                m_vServer.setAutoRangeMin = true;
+                viewParameter["autoRangeMin"]=m_vServer.autoRangeMin;
+                
+            }
+            else if(arguments[i]=="--autorangemax")
+            {
+                std::string ckInput=arguments[i+1];
+                if(ckInput.find_first_of('-')==0)
+                {
+                    std::cerr<<"Error on --autorange argument: "<<ckInput<<std::endl;
+                    return -1;
+                }
+                std::stringstream ss1;
+
+                ss1<<arguments[++i];
+                ss1>>m_vServer.autoRangeMax;
+                m_vServer.setAutoRangeMax = true;
+                viewParameter["autoRangeMax"]=m_vServer.autoRangeMax;
+                
+            }
             
             else if (arguments[i]=="--glyphs")
             {
