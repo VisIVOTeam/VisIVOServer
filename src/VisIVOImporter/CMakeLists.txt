@@ -123,6 +123,8 @@ set(IMPORTER_SOURCE
     Importers/asciisource.h
     Importers/binsource.cpp
     Importers/binsource.h
+    Importers/changasource.cpp
+    Importers/changasource.h
     Importers/csvsource.cpp
     Importers/csvsource.h
     Importers/fitsimagesource.cpp
@@ -181,6 +183,7 @@ target_link_libraries(VisIVOImporter PRIVATE
     OpenMP::OpenMP_CXX
     ${VTK_LIBRARIES}
     stdc++fs
+    tirpc
 )
 
 install(TARGETS VisIVOImporter DESTINATION bin)

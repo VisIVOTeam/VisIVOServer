@@ -31,6 +31,7 @@
 #include "csvsource.h"
 #include "binsource.h"
 #include "flysource.h"
+#include "changasource.h"
 #include "vosourcenew.h"
 #include "gadgetsource.h"
 
@@ -637,6 +638,9 @@ int CommandLine::loadFile ()
   
 		else if(m_type=="gadget")
 			pSource = new GadgetSource();
+
+		else if(m_type=="changa")
+			pSource = new ChangaSource();
 
 #ifndef LIGHT
 		else if(m_type=="xml")
