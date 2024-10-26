@@ -36,6 +36,8 @@ set(IMPORTER_SOURCE
     ${IMPORTER_SOURCE_DIR}/Importers/asciisource.h
     ${IMPORTER_SOURCE_DIR}/Importers/binsource.cpp
     ${IMPORTER_SOURCE_DIR}/Importers/binsource.h
+    ${IMPORTER_SOURCE_DIR}/Importers/changasource.cpp
+    ${IMPORTER_SOURCE_DIR}/Importers/changasource.h
     ${IMPORTER_SOURCE_DIR}/Importers/csvsource.cpp
     ${IMPORTER_SOURCE_DIR}/Importers/csvsource.h
     ${IMPORTER_SOURCE_DIR}/Importers/fitsimagesource.cpp
@@ -215,6 +217,7 @@ target_link_libraries(VisIVOApi PRIVATE
     OpenMP::OpenMP_CXX
     ${VTK_LIBRARIES}
     ${HDF5_LIBRARIES}
+    tirpc
 )
 
 install(TARGETS VisIVOApi DESTINATION lib)
